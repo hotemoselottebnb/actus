@@ -89,17 +89,18 @@ h1{
   box-shadow:0 6px 20px rgba(0,0,0,0.08);
 }
 
-.bg-image-link{
+.event-image-link{
   display:block;
   margin:20px auto;
   text-align:center;
 }
 
-.bg-image-link img{
+.event-image-link img{
   max-width:100%;
   border-radius:12px;
   display:block;
   margin:0 auto;
+  height:auto;
 }
 </style>
 </head>
@@ -117,7 +118,7 @@ h1{
 
 <script>
 function getParam(name){
-  const url=new URL(window.location.href);
+  const url = new URL(window.location.href);
   return url.searchParams.get(name);
 }
 
@@ -129,7 +130,7 @@ function absolutizeUrl(url){
   if(url.startsWith("//")) return "https:" + url;
   if(url.startsWith("/")) return "https://www.flatshaker.fr" + url;
 
-  return "https://www.flatshaker.fr/" + url.replace(/^\.?\//,"");
+  return "https://www.flatshaker.fr/" + url.replace(/^\.?\//, "");
 }
 
 function extractFromSrcset(srcset){
@@ -170,22 +171,22 @@ function extractImageUrlFromElement(el){
 function removeMetaBlocks(contentNode){
   contentNode.querySelectorAll(
     "script,style,nav,header,footer,form,button,aside"
-  ).forEach(el=>el.remove());
+  ).forEach(el => el.remove());
 
   contentNode.querySelectorAll(
     '.blog-post-meta,.post-meta,.entry-meta,.article-meta,.meta,.author,.post-author,.categories,.post-categories,.tags,.post-tags'
-  ).forEach(el=>el.remove());
+  ).forEach(el => el.remove());
 
   contentNode.querySelectorAll(
     'a[href*="/blog/auteurs/"],a[href*="/blog/categories/"]'
-  ).forEach(el=>{
-    const parent=el.closest("p,div,span,li");
+  ).forEach(el => {
+    const parent = el.closest("p,div,span,li");
     if(parent) parent.remove();
     else el.remove();
   });
 
-  contentNode.querySelectorAll("div,p,span,li").forEach(el=>{
-    const txt=(el.textContent||"").trim();
+  contentNode.querySelectorAll("div,p,span,li").forEach(el => {
+    const txt = (el.textContent || "").trim();
 
     const isMetaBlock =
       txt.includes("📅") ||
@@ -203,7 +204,7 @@ function removeMetaBlocks(contentNode){
 }
 
 function fixNormalImages(contentNode){
-  contentNode.querySelectorAll("img").forEach(img=>{
+  contentNode.querySelectorAll("img").forEach(img => {
     const src =
       img.getAttribute("src") ||
       img.getAttribute("data-src") ||
@@ -223,11 +224,11 @@ function fixNormalImages(contentNode){
     img.removeAttribute("data-original");
   });
 
-  contentNode.querySelectorAll("source").forEach(source=>{
+  contentNode.querySelectorAll("source").forEach(source => {
     source.remove();
   });
 
-  contentNode.querySelectorAll("picture").forEach(pic=>{
+  contentNode.querySelectorAll("picture").forEach(pic => {
     const img = pic.querySelector("img");
     if(img){
       pic.replaceWith(img);
@@ -238,14 +239,14 @@ function fixNormalImages(contentNode){
 function convertBackgroundImages(contentNode){
   const candidates = contentNode.querySelectorAll("[style*='background-image']");
 
-  candidates.forEach(el=>{
+  candidates.forEach(el => {
     const imgUrl = extractImageUrlFromElement(el);
     if(!imgUrl) return;
 
     const absoluteImg = absolutizeUrl(imgUrl);
 
     let wrapper = document.createElement("div");
-    wrapper.className = "bg-image-link";
+    wrapper.className = "event-image-link";
 
     let image = document.createElement("img");
     image.src = absoluteImg;
@@ -269,8 +270,38 @@ function convertBackgroundImages(contentNode){
   });
 }
 
+function convertJsonImageObjectLinks(contentNode){
+  contentNode.querySelectorAll("a").forEach(a => {
+    const txt = (a.textContent || "").trim();
+
+    if(!txt.startsWith("{") || !txt.includes('"@type":"ImageObject"')) return;
+
+    try {
+      const data = JSON.parse(txt);
+      const imgUrl = data.url;
+      if(!imgUrl) return;
+
+      const realLink = a.getAttribute("href");
+      const wrapper = document.createElement("a");
+      wrapper.className = "event-image-link";
+      wrapper.href = absolutizeUrl(realLink);
+      wrapper.target = "_blank";
+      wrapper.rel = "noopener noreferrer";
+
+      const img = document.createElement("img");
+      img.src = absolutizeUrl(imgUrl);
+      img.alt = data.caption || data.name || "";
+
+      wrapper.appendChild(img);
+      a.replaceWith(wrapper);
+    } catch(e) {
+      // on ignore si le texte n'est finalement pas un JSON valide
+    }
+  });
+}
+
 function fixLinks(contentNode){
-  contentNode.querySelectorAll("a").forEach(a=>{
+  contentNode.querySelectorAll("a").forEach(a => {
     const href = a.getAttribute("href");
     if(!href) return;
 
@@ -300,7 +331,7 @@ async function loadArticle(){
   try{
     const res = await fetch(articleUrl);
     const html = await res.text();
-    const doc = new DOMParser().parseFromString(html,"text/html");
+    const doc = new DOMParser().parseFromString(html, "text/html");
 
     const title =
       doc.querySelector('meta[property="og:title"]')?.content ||
@@ -328,6 +359,7 @@ async function loadArticle(){
     removeMetaBlocks(contentNode);
     fixNormalImages(contentNode);
     convertBackgroundImages(contentNode);
+    convertJsonImageObjectLinks(contentNode);
     fixLinks(contentNode);
 
     document.title = title + " – Actus 88";
