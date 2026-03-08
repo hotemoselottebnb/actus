@@ -135,11 +135,51 @@
           doc.querySelector(".post-content") ||
           doc.body;
 
-        // On clone le contenu pour pouvoir nettoyer sans toucher l'original
-        contentNode = contentNode.cloneNode(true);
+       // Supprimer les éléments gênants
+contentNode.querySelectorAll("script, style, nav, header, footer, form, button").forEach(el => el.remove());
 
-        // Supprimer les éléments gênants
-        contentNode.querySelectorAll("script, style, nav, header, footer, form, button").forEach(el => el.remove());
+// Supprimer les blocs de métadonnées fréquents
+contentNode.querySelectorAll(`
+  .blog-post-meta,
+  .post-meta,
+  .entry-meta,
+  .article-meta,
+  .meta,
+  .author,
+  .post-author,
+  .categories,
+  .post-categories,
+  .tags,
+  .post-tags
+`).forEach(el => el.remove());
+
+// Supprimer les liens auteur / catégorie si jamais ils restent
+contentNode.querySelectorAll('a[href*="/blog/auteurs/"], a[href*="/blog/categories/"]').forEach(el => {
+  const parent = el.closest("p, div, li, span");
+  if (parent) {
+    parent.remove();
+  } else {
+    el.remove();
+  }
+});
+
+// Supprimer les blocs qui contiennent les gros emojis calendrier / auteur / dossier
+contentNode.querySelectorAll("div, p, li, span").forEach(el => {
+  const txt = (el.textContent || "").trim();
+
+  const isMetaBlock =
+    txt.includes("📅") ||
+    txt.includes("👤") ||
+    txt.includes("📁") ||
+    txt.includes("🗓") ||
+    txt.includes("Hôte-Moselotte bnb") ||
+    txt === "Évènements" ||
+    txt === "Evènements";
+
+  if (isMetaBlock && txt.length < 80) {
+    el.remove();
+  }
+});
 
         // Corriger les images relatives
         contentNode.querySelectorAll("img").forEach(img => {
