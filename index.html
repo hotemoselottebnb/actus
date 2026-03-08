@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Actus 88 – Hautes-Vosges</title>
+
+<meta name="robots" content="noindex,follow">
+
+<style>
+body{
+font-family:Arial;
+background:#f5f5f5;
+margin:0;
+padding:40px;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+background:white;
+padding:40px;
+border-radius:10px;
+}
+
+h1{
+color:#1b4f72;
+}
+
+.article{
+margin-bottom:20px;
+padding-bottom:20px;
+border-bottom:1px solid #ddd;
+}
+
+a{
+color:#1b4f72;
+text-decoration:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Actus 88 – Hautes-Vosges</h1>
+
+<p>
+Chaque semaine, retrouvez les événements, marchés, sorties et activités autour de
+La Bresse, Gérardmer, Remiremont et des Hautes-Vosges.
+</p>
+
+<h2>Dernières actus</h2>
+
+<div id="actus"></div>
+
+<script>
+
+fetch("https://www.flatshaker.fr/sitemap.xml")
+.then(res => res.text())
+.then(data => {
+
+let parser = new DOMParser();
+let xml = parser.parseFromString(data,"text/xml");
+
+let urls = [...xml.querySelectorAll("loc")]
+
+.filter(u => u.textContent.includes("actus-88"))
+.reverse()
+.slice(0,15);
+
+let html="";
+
+urls.forEach(u=>{
+
+let url=u.textContent;
+let titre=url.split("/").pop().replace(/-/g," ");
+
+html+=`
+<div class="article">
+<a href="${url}" target="_blank">${titre}</a>
+</div>
+`;
+
+});
+
+document.getElementById("actus").innerHTML=html;
+
+});
+
+</script>
+
+</div>
+
+</body>
+</html>
