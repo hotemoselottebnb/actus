@@ -204,46 +204,33 @@ function fixNormalImages(contentNode){
   });
 }
 
-function extractImageUrlFromText(txt){
-  if(!txt) return "";
+function transformImageObjectLinksInHtml(html){
+  // Remplace les liens dont le texte contient un ImageObject par une vraie image cliquable
+  return html.replace(
+    /<a\b([^>]*?)href=(["'])(.*?)\2([^>]*)>([\s\S]*?ImageObject[\s\S]*?)<\/a>/gi,
+    function(match, beforeHref, q, href, afterHref, inner){
+      // 1) URL d'image classique dans le texte du lien
+      let imgMatch = inner.match(/https?:\/\/[^"'\\s<>]+?\.(?:jpg|jpeg|png|webp)/i);
 
-  // 1) URL d'image directe n'importe où dans le texte
-  let match = txt.match(/https?:\/\/[^\s"']+\.(?:jpg|jpeg|png|webp)/i);
-  if(match && match[0]) return match[0];
+      // 2) URL échappée type https:\/\/...
+      if(!imgMatch){
+        imgMatch = inner.match(/https?:\\\/\\\/[^"'\\s<>]+?\.(?:jpg|jpeg|png|webp)/i);
+      }
 
-  // 2) URL encodée avec slashs échappés
-  match = txt.match(/https?:\\\/\\\/[^"'\s]+\.(?:jpg|jpeg|png|webp)/i);
-  if(match && match[0]){
-    return match[0].replace(/\\\//g, "/");
-  }
+      if(!imgMatch){
+        return match;
+      }
 
-  return "";
-}
+      let imgUrl = imgMatch[0].replace(/\\\//g, "/");
+      let finalHref = absolutizeUrl(href);
+      let finalImg = absolutizeUrl(imgUrl);
 
-function convertJsonImageObjectLinks(contentNode){
-  contentNode.querySelectorAll("a").forEach(a => {
-    const txt = (a.textContent || "").trim();
-    if(!txt || !txt.includes("ImageObject")) return;
-
-    const imgUrl = extractImageUrlFromText(txt);
-    if(!imgUrl) return;
-
-    const realLink = a.getAttribute("href");
-    if(!realLink) return;
-
-    const wrapper = document.createElement("a");
-    wrapper.className = "event-image-link";
-    wrapper.href = absolutizeUrl(realLink);
-    wrapper.target = "_blank";
-    wrapper.rel = "noopener noreferrer";
-
-    const img = document.createElement("img");
-    img.src = absolutizeUrl(imgUrl);
-    img.alt = "";
-
-    wrapper.appendChild(img);
-    a.replaceWith(wrapper);
-  });
+      return '<a class="event-image-link" href="' + finalHref +
+             '" target="_blank" rel="noopener noreferrer">' +
+             '<img src="' + finalImg + '" alt="">' +
+             '</a>';
+    }
+  );
 }
 
 function fixLinks(contentNode){
@@ -304,15 +291,24 @@ async function loadArticle(){
 
     removeMetaBlocks(contentNode);
     fixNormalImages(contentNode);
-    convertJsonImageObjectLinks(contentNode);
-    fixLinks(contentNode);
+
+    // On travaille ici sur le HTML brut du contenu
+    let processedHtml = contentNode.innerHTML;
+    processedHtml = transformImageObjectLinksInHtml(processedHtml);
+
+    // On recharge ce HTML transformé dans un conteneur temporaire
+    const temp = document.createElement("div");
+    temp.innerHTML = processedHtml;
+
+    fixNormalImages(temp);
+    fixLinks(temp);
 
     document.title = title + " – Actus 88";
 
     document.getElementById("article").innerHTML = `
       <h1>${title}</h1>
       ${heroImage ? `<img class="hero-image" src="${heroImage}" alt="${title}">` : ""}
-      <div class="content">${contentNode.innerHTML}</div>
+      <div class="content">${temp.innerHTML}</div>
     `;
   } catch(e){
     document.getElementById("article").innerHTML =
