@@ -56,7 +56,8 @@ h1{
   font-size:1.05rem;
 }
 
-.content h2,.content h3{
+.content h2,
+.content h3{
   margin-top:28px;
   color:#8b1e2d;
 }
@@ -133,6 +134,11 @@ function absolutizeUrl(url){
   return "https://www.flatshaker.fr/" + url.replace(/^\.?\//, "");
 }
 
+function proxifyImage(url){
+  const absolute = absolutizeUrl(url);
+  return "https://images.weserv.nl/?url=" + encodeURIComponent(absolute);
+}
+
 function extractFromSrcset(srcset){
   if(!srcset) return "";
   return srcset.split(",")[0].trim().split(" ")[0];
@@ -184,7 +190,7 @@ function fixNormalImages(contentNode){
       extractFromSrcset(img.getAttribute("srcset"));
 
     if(src){
-      img.src = absolutizeUrl(src);
+      img.src = proxifyImage(src);
     }
 
     img.removeAttribute("srcset");
@@ -204,26 +210,29 @@ function fixNormalImages(contentNode){
   });
 }
 
+function extractImageUrlFromText(txt){
+  if(!txt) return "";
+
+  let match = txt.match(/https?:\/\/[^\s"'<>]+?\.(?:jpg|jpeg|png|webp)/i);
+  if(match && match[0]) return match[0];
+
+  match = txt.match(/https?:\\\/\\\/[^"'<>]+?\.(?:jpg|jpeg|png|webp)/i);
+  if(match && match[0]){
+    return match[0].replace(/\\\//g, "/");
+  }
+
+  return "";
+}
+
 function transformImageObjectLinksInHtml(html){
-  // Remplace les liens dont le texte contient un ImageObject par une vraie image cliquable
   return html.replace(
     /<a\b([^>]*?)href=(["'])(.*?)\2([^>]*)>([\s\S]*?ImageObject[\s\S]*?)<\/a>/gi,
     function(match, beforeHref, q, href, afterHref, inner){
-      // 1) URL d'image classique dans le texte du lien
-      let imgMatch = inner.match(/https?:\/\/[^"'\\s<>]+?\.(?:jpg|jpeg|png|webp)/i);
+      const imgUrl = extractImageUrlFromText(inner);
+      if(!imgUrl) return match;
 
-      // 2) URL échappée type https:\/\/...
-      if(!imgMatch){
-        imgMatch = inner.match(/https?:\\\/\\\/[^"'\\s<>]+?\.(?:jpg|jpeg|png|webp)/i);
-      }
-
-      if(!imgMatch){
-        return match;
-      }
-
-      let imgUrl = imgMatch[0].replace(/\\\//g, "/");
-      let finalHref = absolutizeUrl(href);
-      let finalImg = absolutizeUrl(imgUrl);
+      const finalHref = absolutizeUrl(href);
+      const finalImg = proxifyImage(imgUrl);
 
       return '<a class="event-image-link" href="' + finalHref +
              '" target="_blank" rel="noopener noreferrer">' +
@@ -292,11 +301,9 @@ async function loadArticle(){
     removeMetaBlocks(contentNode);
     fixNormalImages(contentNode);
 
-    // On travaille ici sur le HTML brut du contenu
     let processedHtml = contentNode.innerHTML;
     processedHtml = transformImageObjectLinksInHtml(processedHtml);
 
-    // On recharge ce HTML transformé dans un conteneur temporaire
     const temp = document.createElement("div");
     temp.innerHTML = processedHtml;
 
@@ -307,7 +314,7 @@ async function loadArticle(){
 
     document.getElementById("article").innerHTML = `
       <h1>${title}</h1>
-      ${heroImage ? `<img class="hero-image" src="${heroImage}" alt="${title}">` : ""}
+      ${heroImage ? `<img class="hero-image" src="${proxifyImage(heroImage)}" alt="${title}">` : ""}
       <div class="content">${temp.innerHTML}</div>
     `;
   } catch(e){
