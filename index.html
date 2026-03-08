@@ -156,78 +156,91 @@
   </main>
 
   <script>
-    function slugToTitle(url) {
-      const slug = url.split("/").pop();
-      let title = slug
-        .replace(/^blog\/articles\//, "")
-        .replace(/-/g, " ")
-        .replace(/\b\w/g, l => l.toUpperCase());
 
-      title = title.replace("Actus 88 Du", "Actus 88 du");
-      title = title.replace("Au", "au");
-      return title;
+async function getImageFromArticle(url) {
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+
+    const match = text.match(/property="og:image"\s*content="([^"]+)"/);
+
+    if (match) {
+      return match[1];
     }
+  } catch (e) {}
 
-    function makeExcerpt(title) {
-      if (title.toLowerCase().includes("actus 88")) {
-        return "Découvrez les événements, animations, marchés, loisirs et idées de sorties de la semaine dans les Hautes-Vosges.";
-      }
-      return "Ouvrez cet article pour découvrir tous les détails, les bons plans et les informations utiles.";
-    }
+  return null;
+}
 
-    fetch("https://www.flatshaker.fr/sitemap.xml")
-      .then(res => res.text())
-      .then(data => {
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(data, "text/xml");
+function slugToTitle(url) {
+  const slug = url.split("/").pop();
 
-        const urls = [...xml.querySelectorAll("loc")]
-          .map(u => u.textContent)
-          .filter(url =>
-            url.includes("flatshaker.fr/") &&
-            (
-              url.includes("actus-88") ||
-              url.includes("que-faire-dans-les-hautes-vosges") ||
-              url.includes("idees-sorties-88")
-            )
-          )
-          .reverse()
-          .slice(0, 18);
+  return slug
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, l => l.toUpperCase());
+}
 
-        if (!urls.length) {
-          document.getElementById("actus").innerHTML =
-            '<div class="error">Aucun article trouvé pour le moment.</div>';
-          return;
-        }
+fetch("https://www.flatshaker.fr/sitemap.xml")
+.then(res => res.text())
+.then(async data => {
 
-        const html = `
-          <div class="grid">
-            ${urls.map(url => {
-              const title = slugToTitle(url);
-              const excerpt = makeExcerpt(title);
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(data, "text/xml");
 
-              return `
-                <article class="card">
-                  <div class="card-image">Actus & idées de sorties dans les Hautes-Vosges</div>
-                  <div class="card-content">
-                    <h3>${title}</h3>
-                    <p>${excerpt}</p>
-                    <a class="button" href="${url}" target="_blank" rel="noopener noreferrer">Lire l’article</a>
-                  </div>
-                </article>
-              `;
-            }).join("")}
-          </div>
-        `;
+  const urls = [...xml.querySelectorAll("loc")]
+    .map(u => u.textContent)
+    .filter(url =>
+      url.includes("actus-88")
+    )
+    .reverse()
+    .slice(0, 12);
 
-        document.getElementById("actus").className = "";
-        document.getElementById("actus").innerHTML = html;
-      })
-      .catch(() => {
-        document.getElementById("actus").innerHTML =
-          '<div class="error">Impossible de charger les articles pour le moment.</div>';
-      });
-  </script>
+  const container = document.getElementById("actus");
+
+  let html = '<div class="grid">';
+
+  for (const url of urls) {
+
+    const image = await getImageFromArticle(url);
+    const title = slugToTitle(url);
+
+    html += `
+      <article class="card">
+
+        <div class="card-image"
+        style="background-image:url('${image || ""}');
+        background-size:cover;
+        background-position:center">
+        </div>
+
+        <div class="card-content">
+          <h3>${title}</h3>
+
+          <p>
+          Découvrez les événements, animations, marchés et
+          idées de sorties de la semaine dans les Hautes-Vosges.
+          </p>
+
+          <a class="button" href="${url}" target="_blank">
+          Lire l’article
+          </a>
+        </div>
+
+      </article>
+    `;
+  }
+
+  html += "</div>";
+
+  container.innerHTML = html;
+
+})
+.catch(() => {
+  document.getElementById("actus").innerHTML =
+  "Impossible de charger les articles.";
+});
+
+</script>
 
 </body>
 </html>
