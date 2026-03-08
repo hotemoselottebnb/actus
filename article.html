@@ -62,17 +62,26 @@ h1{
   color:#8b1e2d;
 }
 
+.content p{
+  margin:0 0 16px;
+}
+
 .content img{
   max-width:100%;
-  border-radius:12px;
+  border-radius:14px;
   display:block;
-  margin:20px auto;
+  margin:24px auto;
   height:auto;
+  box-shadow:0 6px 20px rgba(0,0,0,0.08);
 }
 
 .content a{
   color:#8b1e2d;
   word-break:break-word;
+}
+
+.content a[href^="http"]:not(.back-link){
+  font-weight:bold;
 }
 
 .back{
@@ -90,18 +99,19 @@ h1{
   box-shadow:0 6px 20px rgba(0,0,0,0.08);
 }
 
-.event-image-link{
-  display:block;
-  margin:20px auto;
-  text-align:center;
+.event-link-button{
+  display:inline-block;
+  background:#8b1e2d;
+  color:#fff !important;
+  text-decoration:none;
+  padding:10px 16px;
+  border-radius:10px;
+  font-weight:bold;
+  margin:10px 0 18px;
 }
 
-.event-image-link img{
-  max-width:100%;
-  border-radius:12px;
-  display:block;
-  margin:0 auto;
-  height:auto;
+.hidden-broken{
+  display:none !important;
 }
 </style>
 </head>
@@ -132,11 +142,6 @@ function absolutizeUrl(url){
   if(url.startsWith("/")) return "https://www.flatshaker.fr" + url;
 
   return "https://www.flatshaker.fr/" + url.replace(/^\.?\//, "");
-}
-
-function proxifyImage(url){
-  const absolute = absolutizeUrl(url);
-  return "https://images.weserv.nl/?url=" + encodeURIComponent(absolute);
 }
 
 function extractFromSrcset(srcset){
@@ -179,7 +184,7 @@ function removeMetaBlocks(contentNode){
   });
 }
 
-function fixNormalImages(contentNode){
+function fixImages(contentNode){
   contentNode.querySelectorAll("img").forEach(img => {
     const src =
       img.getAttribute("src") ||
@@ -190,7 +195,7 @@ function fixNormalImages(contentNode){
       extractFromSrcset(img.getAttribute("srcset"));
 
     if(src){
-      img.src = proxifyImage(src);
+      img.src = absolutizeUrl(src);
     }
 
     img.removeAttribute("srcset");
@@ -198,6 +203,10 @@ function fixNormalImages(contentNode){
     img.removeAttribute("data-src");
     img.removeAttribute("data-lazy-src");
     img.removeAttribute("data-original");
+
+    img.onerror = function(){
+      img.classList.add("hidden-broken");
+    };
   });
 
   contentNode.querySelectorAll("source").forEach(source => source.remove());
@@ -208,38 +217,6 @@ function fixNormalImages(contentNode){
       pic.replaceWith(img);
     }
   });
-}
-
-function extractImageUrlFromText(txt){
-  if(!txt) return "";
-
-  let match = txt.match(/https?:\/\/[^\s"'<>]+?\.(?:jpg|jpeg|png|webp)/i);
-  if(match && match[0]) return match[0];
-
-  match = txt.match(/https?:\\\/\\\/[^"'<>]+?\.(?:jpg|jpeg|png|webp)/i);
-  if(match && match[0]){
-    return match[0].replace(/\\\//g, "/");
-  }
-
-  return "";
-}
-
-function transformImageObjectLinksInHtml(html){
-  return html.replace(
-    /<a\b([^>]*?)href=(["'])(.*?)\2([^>]*)>([\s\S]*?ImageObject[\s\S]*?)<\/a>/gi,
-    function(match, beforeHref, q, href, afterHref, inner){
-      const imgUrl = extractImageUrlFromText(inner);
-      if(!imgUrl) return match;
-
-      const finalHref = absolutizeUrl(href);
-      const finalImg = proxifyImage(imgUrl);
-
-      return '<a class="event-image-link" href="' + finalHref +
-             '" target="_blank" rel="noopener noreferrer">' +
-             '<img src="' + finalImg + '" alt="">' +
-             '</a>';
-    }
-  );
 }
 
 function fixLinks(contentNode){
@@ -258,6 +235,29 @@ function fixLinks(contentNode){
     a.href = absolutizeUrl(href);
     a.target = "_blank";
     a.rel = "noopener noreferrer";
+  });
+}
+
+function styleExternalLinks(contentNode){
+  contentNode.querySelectorAll("a").forEach(a => {
+    const href = a.getAttribute("href") || "";
+    const hasImage = !!a.querySelector("img");
+
+    if(href.startsWith("http") && !hasImage){
+      const txt = (a.textContent || "").trim();
+
+      if(
+        txt &&
+        txt.length < 120 &&
+        !txt.includes("flatshaker.fr") &&
+        !txt.includes("hotemoselottebnb.fr")
+      ){
+        a.classList.add("event-link-button");
+        if(!a.textContent.trim().toLowerCase().includes("site")){
+          a.textContent = "Voir le site officiel";
+        }
+      }
+    }
   });
 }
 
@@ -299,23 +299,16 @@ async function loadArticle(){
     let contentNode = sourceNode.cloneNode(true);
 
     removeMetaBlocks(contentNode);
-    fixNormalImages(contentNode);
-
-    let processedHtml = contentNode.innerHTML;
-    processedHtml = transformImageObjectLinksInHtml(processedHtml);
-
-    const temp = document.createElement("div");
-    temp.innerHTML = processedHtml;
-
-    fixNormalImages(temp);
-    fixLinks(temp);
+    fixImages(contentNode);
+    fixLinks(contentNode);
+    styleExternalLinks(contentNode);
 
     document.title = title + " – Actus 88";
 
     document.getElementById("article").innerHTML = `
       <h1>${title}</h1>
-      ${heroImage ? `<img class="hero-image" src="${proxifyImage(heroImage)}" alt="${title}">` : ""}
-      <div class="content">${temp.innerHTML}</div>
+      ${heroImage ? `<img class="hero-image" src="${absolutizeUrl(heroImage)}" alt="${title}" onerror="this.classList.add('hidden-broken')">` : ""}
+      <div class="content">${contentNode.innerHTML}</div>
     `;
   } catch(e){
     document.getElementById("article").innerHTML =
