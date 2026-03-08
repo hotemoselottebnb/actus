@@ -138,36 +138,6 @@ function extractFromSrcset(srcset){
   return srcset.split(",")[0].trim().split(" ")[0];
 }
 
-function extractImageUrlFromElement(el){
-  if(!el) return "";
-
-  if(el.tagName === "IMG"){
-    return (
-      el.getAttribute("src") ||
-      el.getAttribute("data-src") ||
-      el.getAttribute("data-lazy-src") ||
-      el.getAttribute("data-image") ||
-      el.getAttribute("data-original") ||
-      extractFromSrcset(el.getAttribute("srcset")) ||
-      ""
-    );
-  }
-
-  if(el.tagName === "SOURCE"){
-    return (
-      el.getAttribute("src") ||
-      el.getAttribute("srcset") ||
-      ""
-    );
-  }
-
-  const style = el.getAttribute("style") || "";
-  const match = style.match(/background-image\s*:\s*url\((['"]?)(.*?)\1\)/i);
-  if(match && match[2]) return match[2];
-
-  return "";
-}
-
 function removeMetaBlocks(contentNode){
   contentNode.querySelectorAll(
     "script,style,nav,header,footer,form,button,aside"
@@ -224,9 +194,7 @@ function fixNormalImages(contentNode){
     img.removeAttribute("data-original");
   });
 
-  contentNode.querySelectorAll("source").forEach(source => {
-    source.remove();
-  });
+  contentNode.querySelectorAll("source").forEach(source => source.remove());
 
   contentNode.querySelectorAll("picture").forEach(pic => {
     const img = pic.querySelector("img");
@@ -236,67 +204,32 @@ function fixNormalImages(contentNode){
   });
 }
 
-function convertBackgroundImages(contentNode){
-  const candidates = contentNode.querySelectorAll("[style*='background-image']");
-
-  candidates.forEach(el => {
-    const imgUrl = extractImageUrlFromElement(el);
-    if(!imgUrl) return;
-
-    const absoluteImg = absolutizeUrl(imgUrl);
-
-    let wrapper = document.createElement("div");
-    wrapper.className = "event-image-link";
-
-    let image = document.createElement("img");
-    image.src = absoluteImg;
-    image.alt = "";
-
-    const closestLink = el.closest("a");
-    if(closestLink && closestLink.getAttribute("href")){
-      let a = document.createElement("a");
-      a.href = absolutizeUrl(closestLink.getAttribute("href"));
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.appendChild(image);
-      wrapper.appendChild(a);
-    } else {
-      wrapper.appendChild(image);
-    }
-
-    if(el.children.length === 0 || (el.textContent || "").trim().length < 5){
-      el.replaceWith(wrapper);
-    }
-  });
-}
-
 function convertJsonImageObjectLinks(contentNode){
   contentNode.querySelectorAll("a").forEach(a => {
     const txt = (a.textContent || "").trim();
 
-    if(!txt.startsWith("{") || !txt.includes('"@type":"ImageObject"')) return;
+    if(!txt.includes("ImageObject")) return;
 
-    try {
-      const data = JSON.parse(txt);
-      const imgUrl = data.url;
-      if(!imgUrl) return;
+    // On extrait l'URL d'image même si le JSON n'est pas parfaitement parseable
+    const match = txt.match(/"url":"(https?:\/\/[^"]+\.(?:jpg|jpeg|png|webp))/i);
+    if(!match || !match[1]) return;
 
-      const realLink = a.getAttribute("href");
-      const wrapper = document.createElement("a");
-      wrapper.className = "event-image-link";
-      wrapper.href = absolutizeUrl(realLink);
-      wrapper.target = "_blank";
-      wrapper.rel = "noopener noreferrer";
+    const imgUrl = match[1];
+    const realLink = a.getAttribute("href");
+    if(!realLink) return;
 
-      const img = document.createElement("img");
-      img.src = absolutizeUrl(imgUrl);
-      img.alt = data.caption || data.name || "";
+    const wrapper = document.createElement("a");
+    wrapper.className = "event-image-link";
+    wrapper.href = absolutizeUrl(realLink);
+    wrapper.target = "_blank";
+    wrapper.rel = "noopener noreferrer";
 
-      wrapper.appendChild(img);
-      a.replaceWith(wrapper);
-    } catch(e) {
-      // on ignore si le texte n'est finalement pas un JSON valide
-    }
+    const img = document.createElement("img");
+    img.src = absolutizeUrl(imgUrl);
+    img.alt = "";
+
+    wrapper.appendChild(img);
+    a.replaceWith(wrapper);
   });
 }
 
@@ -358,7 +291,6 @@ async function loadArticle(){
 
     removeMetaBlocks(contentNode);
     fixNormalImages(contentNode);
-    convertBackgroundImages(contentNode);
     convertJsonImageObjectLinks(contentNode);
     fixLinks(contentNode);
 
