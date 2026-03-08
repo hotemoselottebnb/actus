@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Article – Actus 88</title>
+  <meta name="robots" content="noindex,follow">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f1ea;
+      color: #2b2b2b;
+    }
+
+    .topbar {
+      background: #8b1e2d;
+      color: white;
+      padding: 18px 20px;
+    }
+
+    .topbar a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 28px 20px 50px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+
+    .hero-image {
+      width: 100%;
+      max-height: 460px;
+      object-fit: cover;
+      border-radius: 18px;
+      margin-bottom: 24px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
+    .content {
+      background: white;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      line-height: 1.8;
+      font-size: 1.05rem;
+    }
+
+    .content h2,
+    .content h3 {
+      margin-top: 28px;
+      color: #8b1e2d;
+    }
+
+    .content img {
+      max-width: 100%;
+      border-radius: 12px;
+      height: auto;
+    }
+
+    .content a {
+      color: #8b1e2d;
+      word-break: break-word;
+    }
+
+    .back {
+      display: inline-block;
+      margin-bottom: 18px;
+      text-decoration: none;
+      color: #8b1e2d;
+      font-weight: bold;
+    }
+
+    .error {
+      background: white;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <a href="./">← Retour aux Actus 88</a>
+  </div>
+
+  <main class="container">
+    <a class="back" href="./">← Revenir à la liste des articles</a>
+    <div id="article">Chargement de l’article…</div>
+  </main>
+
+  <script>
+    function getParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+
+    async function loadArticle() {
+      const articleUrl = getParam("url");
+
+      if (!articleUrl) {
+        document.getElementById("article").innerHTML =
+          '<div class="error">Aucun article indiqué.</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch(articleUrl);
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
+
+        const title =
+          doc.querySelector('meta[property="og:title"]')?.content ||
+          doc.querySelector("h1")?.innerText ||
+          "Article";
+
+        const image =
+          doc.querySelector('meta[property="og:image"]')?.content || "";
+
+        let contentNode =
+          doc.querySelector("article") ||
+          doc.querySelector("main") ||
+          doc.querySelector(".blog-post") ||
+          doc.querySelector(".post-content") ||
+          doc.body;
+
+        // On clone le contenu pour pouvoir nettoyer sans toucher l'original
+        contentNode = contentNode.cloneNode(true);
+
+        // Supprimer les éléments gênants
+        contentNode.querySelectorAll("script, style, nav, header, footer, form, button").forEach(el => el.remove());
+
+        // Corriger les images relatives
+        contentNode.querySelectorAll("img").forEach(img => {
+          const src = img.getAttribute("src");
+          if (src && src.startsWith("/")) {
+            img.src = "https://www.flatshaker.fr" + src;
+          }
+        });
+
+        // Corriger les liens relatifs
+        contentNode.querySelectorAll("a").forEach(a => {
+          const href = a.getAttribute("href");
+          if (!href) return;
+
+          if (href.startsWith("/")) {
+            a.href = "https://www.flatshaker.fr" + href;
+          }
+
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+        });
+
+        document.title = title + " – Actus 88";
+
+        document.getElementById("article").innerHTML = `
+          <h1>${title}</h1>
+          ${image ? `<img class="hero-image" src="${image}" alt="${title}">` : ""}
+          <div class="content">${contentNode.innerHTML}</div>
+        `;
+      } catch (e) {
+        document.getElementById("article").innerHTML =
+          '<div class="error">Impossible de charger cet article pour le moment.</div>';
+      }
+    }
+
+    loadArticle();
+  </script>
+
+</body>
+</html>
