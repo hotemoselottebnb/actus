@@ -157,19 +157,37 @@
 
   <script>
 
-async function getImageFromArticle(url) {
+async function getArticleData(url) {
+
   try {
+
     const res = await fetch(url);
-    const text = await res.text();
+    const html = await res.text();
 
-    const match = text.match(/property="og:image"\s*content="([^"]+)"/);
+    const doc = new DOMParser().parseFromString(html, "text/html");
 
-    if (match) {
-      return match[1];
-    }
-  } catch (e) {}
+    const image =
+      doc.querySelector('meta[property="og:image"]')?.content || "";
 
-  return null;
+    const paragraph =
+      doc.querySelector("article p")?.innerText ||
+      doc.querySelector("p")?.innerText ||
+      "";
+
+    return {
+      image: image,
+      excerpt: paragraph.substring(0, 180) + "..."
+    };
+
+  } catch {
+
+    return {
+      image: "",
+      excerpt: ""
+    };
+
+  }
+
 }
 
 function slugToTitle(url) {
