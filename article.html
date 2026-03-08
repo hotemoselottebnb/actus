@@ -229,37 +229,45 @@
         // Supprimer les métadonnées inutiles
         cleanMetaBlocks(contentNode);
 
-        // Corriger les images
-        contentNode.querySelectorAll("img").forEach(img => {
-          const src = img.getAttribute("src");
-          if (src) {
-            img.src = absolutizeUrl(src);
-          }
+       // Corriger toutes les images
+contentNode.querySelectorAll("img").forEach(img => {
 
-          const srcset = img.getAttribute("srcset");
-          if (srcset) {
-            img.removeAttribute("srcset");
-          }
-        });
+  let src =
+    img.getAttribute("src") ||
+    img.getAttribute("data-src") ||
+    img.getAttribute("data-image");
 
-        // Corriger les liens
-        contentNode.querySelectorAll("a").forEach(a => {
-          const href = a.getAttribute("href");
-          if (!href) return;
+  if (src) {
+    img.src = absolutizeUrl(src);
+  }
 
-          if (
-            href.startsWith("#") ||
-            href.startsWith("mailto:") ||
-            href.startsWith("tel:")
-          ) {
-            return;
-          }
+  img.removeAttribute("srcset");
 
-          a.href = absolutizeUrl(href);
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-        });
+  // améliorer l'affichage
+  img.style.cursor = "pointer";
+});
 
+       // Corriger les liens (et garder images cliquables)
+contentNode.querySelectorAll("a").forEach(a => {
+
+  const href = a.getAttribute("href");
+  if (!href) return;
+
+  if (
+    href.startsWith("#") ||
+    href.startsWith("mailto:") ||
+    href.startsWith("tel:")
+  ) {
+    return;
+  }
+
+  a.href = absolutizeUrl(href);
+
+  // ouvrir événements dans nouvel onglet
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+
+});
         document.title = title + " – Actus 88";
 
         document.getElementById("article").className = "";
