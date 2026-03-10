@@ -1,463 +1,359 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Article – Actus 88</title>
-  <meta name="robots" content="noindex,follow">
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f4f1ea;
-      color: #2b2b2b;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Article – Actus 88</title>
 
-    .topbar {
-      background: #8b1e2d;
-      color: white;
-      padding: 18px 20px;
-    }
+<meta name="robots" content="noindex,follow">
 
-    .topbar a {
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-    }
+<style>
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 28px 20px 50px;
-    }
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:#f4f1ea;
+color:#2b2b2b;
+}
 
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-      line-height: 1.2;
-    }
+.topbar{
+background:#8b1e2d;
+padding:14px 20px;
+color:white;
+}
 
-    .hero-image {
-      width: 100%;
-      max-height: 460px;
-      object-fit: cover;
-      border-radius: 18px;
-      margin-bottom: 24px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
+.topbar-inner{
+max-width:900px;
+margin:auto;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+}
 
-    .content {
-      background: white;
-      border-radius: 18px;
-      padding: 28px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      line-height: 1.8;
-      font-size: 1.05rem;
-    }
+.topbar-back{
+color:white;
+text-decoration:none;
+font-weight:bold;
+}
 
-    .content h2,
-    .content h3 {
-      margin-top: 28px;
-      color: #8b1e2d;
-      line-height: 1.35;
-    }
-
-    .content h2 a,
-    .content h3 a {
-      color: #8b1e2d;
-      text-decoration: none;
-    }
-
-    .content h2 a:hover,
-    .content h3 a:hover {
-      text-decoration: underline;
-    }
-
-    .content p {
-      margin: 0 0 16px;
-    }
-
-    .content img {
-      max-width: 100%;
-      border-radius: 14px;
-      display: block;
-      margin: 24px auto;
-      height: auto;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
-
-    .content a {
-      color: #8b1e2d;
-      word-break: break-word;
-    }
-
-    .back {
-      display: inline-block;
-      margin-bottom: 18px;
-      text-decoration: none;
-      color: #8b1e2d;
-      font-weight: bold;
-    }
-
-    .error {
-      background: white;
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-    }
-
-    .hidden-broken {
-      display: none !important;
-    }
-
-    .event-link-button {
-      display: inline-block;
-      background: #8b1e2d;
-      color: #fff !important;
-      text-decoration: none;
-      padding: 10px 16px;
-      border-radius: 10px;
-      font-weight: bold;
-      margin: 10px 0 18px;
-    }
-  </style>
-  .cta-location{
-  float:right;
-  background:white;
-  color:#8b1e2d !important;
-  padding:10px 16px;
-  border-radius:10px;
-  font-weight:bold;
-  text-decoration:none;
+.cta-location{
+background:white;
+color:#8b1e2d !important;
+padding:10px 16px;
+border-radius:10px;
+font-weight:bold;
+text-decoration:none;
 }
 
 .cta-location:hover{
-  background:#f5e6e9;
+background:#f5e6e9;
 }
+
+.container{
+max-width:900px;
+margin:auto;
+padding:28px 20px 60px;
+}
+
+h1{
+font-size:2rem;
+margin-bottom:20px;
+}
+
+.hero-image{
+width:100%;
+max-height:460px;
+object-fit:cover;
+border-radius:18px;
+margin-bottom:24px;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+}
+
+.content{
+background:white;
+border-radius:18px;
+padding:28px;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+line-height:1.8;
+font-size:1.05rem;
+}
+
+.content h2,
+.content h3{
+margin-top:30px;
+color:#8b1e2d;
+}
+
+.content h2 a,
+.content h3 a{
+color:#8b1e2d;
+text-decoration:none;
+}
+
+.content h2 a:hover,
+.content h3 a:hover{
+text-decoration:underline;
+}
+
+.content img{
+max-width:100%;
+border-radius:14px;
+margin:24px auto;
+display:block;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+}
+
+.back{
+display:inline-block;
+margin-bottom:18px;
+text-decoration:none;
+color:#8b1e2d;
+font-weight:bold;
+}
+
+.error{
+background:white;
+border-radius:18px;
+padding:24px;
+box-shadow:0 6px 20px rgba(0,0,0,0.08);
+}
+
+</style>
+
 </head>
+
 <body>
 
-  <div class="topbar">
-  <a href="./">← Retour aux Actus 88</a>
+<div class="topbar">
 
-  <a href="https://www.flatshaker.fr/hotemoselottebnb"
-     target="_blank"
-     rel="noopener noreferrer"
-     class="cta-location">
-     Voir nos locations
-  </a>
+<div class="topbar-inner">
+
+<a href="./" class="topbar-back">
+← Retour aux Actus 88
+</a>
+
+<a href="https://www.flatshaker.fr/hotemoselottebnb"
+target="_blank"
+rel="noopener noreferrer"
+class="cta-location">
+Voir nos locations
+</a>
+
 </div>
 
-  <main class="container">
-    <a class="back" href="./">← Revenir à la liste des articles</a>
-    <div id="article">Chargement de l’article…</div>
-  </main>
+</div>
 
-  <script>
-    function getParam(name) {
-      const url = new URL(window.location.href);
-      return url.searchParams.get(name);
-    }
+<main class="container">
 
-    function absolutizeUrl(url) {
-      if (!url) return "";
-      url = url.trim();
+<a class="back" href="./">
+← Revenir à la liste des articles
+</a>
 
-      if (url.startsWith("http://") || url.startsWith("https://")) return url;
-      if (url.startsWith("//")) return "https:" + url;
-      if (url.startsWith("/")) return "https://www.flatshaker.fr" + url;
+<div id="article">
+Chargement de l’article…
+</div>
 
-      return "https://www.flatshaker.fr/" + url.replace(/^\.?\//, "");
-    }
+</main>
 
-    function extractFromSrcset(srcset) {
-      if (!srcset) return "";
-      return srcset.split(",")[0].trim().split(" ")[0];
-    }
+<script>
 
-    function isUsefulExternalLink(href) {
-      if (!href) return false;
-      const h = href.toLowerCase();
-      if (h.startsWith("#") || h.startsWith("mailto:") || h.startsWith("tel:")) return false;
-      if (h.includes("flatshaker.fr")) return false;
-      if (h.includes("hotemoselottebnb.fr")) return false;
-      return h.startsWith("http://") || h.startsWith("https://") || h.startsWith("/");
-    }
+function getParam(name){
 
-    function removeMetaBlocks(contentNode) {
-      contentNode.querySelectorAll(
-        "script,style,nav,header,footer,form,button,aside"
-      ).forEach(el => el.remove());
+const url = new URL(window.location.href);
+return url.searchParams.get(name);
 
-      contentNode.querySelectorAll(
-        '.blog-post-meta,.post-meta,.entry-meta,.article-meta,.meta,.author,.post-author,.categories,.post-categories,.tags,.post-tags'
-      ).forEach(el => el.remove());
+}
 
-      contentNode.querySelectorAll(
-        'a[href*="/blog/auteurs/"],a[href*="/blog/categories/"],a[href*="/blog/mots-cles/"]'
-      ).forEach(el => {
-        const parent = el.closest("p,div,span,li");
-        if (parent) parent.remove();
-        else el.remove();
-      });
+function absolutizeUrl(url){
 
-      contentNode.querySelectorAll("div,p,span,li").forEach(el => {
-        if (el.querySelector("img")) return;
+if(!url) return "";
 
-        const txt = (el.textContent || "").trim();
+if(url.startsWith("http")) return url;
 
-        const isMetaBlock =
-          txt.includes("📅") ||
-          txt.includes("👤") ||
-          txt.includes("📁") ||
-          txt.includes("🗓") ||
-          txt.includes("🏷") ||
-          txt.includes("Hôte-Moselotte bnb") ||
-          txt === "Évènements" ||
-          txt === "Evènements" ||
-          txt === "Mots-clés" ||
-          txt === "Mots clés" ||
-          txt === "Tags";
+if(url.startsWith("/"))
+return "https://www.flatshaker.fr"+url;
 
-        if (isMetaBlock && txt.length < 180) {
-          el.remove();
-        }
-      });
-    }
+return "https://www.flatshaker.fr/"+url;
 
-    function removeKeywordBlocks(contentNode) {
-      const all = Array.from(contentNode.querySelectorAll("div,section,aside,p,ul"));
-      all.forEach(el => {
-        const txt = (el.textContent || "").trim().toLowerCase();
+}
 
-        const hasKeywordLinks = el.querySelector('a[href*="/blog/mots-cles/"]');
-        const looksLikeKeywords =
-          txt.includes("mots-clés") ||
-          txt.includes("mots clés") ||
-          txt.includes("tags") ||
-          txt.includes("location saisonnière") ||
-          txt.includes("evenements") ||
-          txt.includes("évènements") ||
-          txt.includes("vacances");
+function cleanContent(contentNode){
 
-        if (hasKeywordLinks) {
-          el.remove();
-          return;
-        }
+contentNode.querySelectorAll(
+"script,style,nav,header,footer,form,button,aside"
+).forEach(el=>el.remove());
 
-        if (
-          looksLikeKeywords &&
-          !el.querySelector("img") &&
-          !el.querySelector("h2,h3")
-        ) {
-          const links = el.querySelectorAll("a");
-          const onlyKeywordishLinks = links.length > 0 && Array.from(links).every(a =>
-            (a.getAttribute("href") || "").includes("/blog/mots-cles/")
-          );
-          if (onlyKeywordishLinks) el.remove();
-        }
-      });
-    }
+contentNode.querySelectorAll(
+'a[href*="/blog/auteurs/"],a[href*="/blog/categories/"],a[href*="/blog/mots-cles/"]'
+).forEach(el=>{
 
-    function fixImages(contentNode) {
-      contentNode.querySelectorAll("img").forEach(img => {
-        let src =
-          img.getAttribute("src") ||
-          img.getAttribute("data-src") ||
-          img.getAttribute("data-lazy-src") ||
-          img.getAttribute("data-original") ||
-          img.getAttribute("data-image") ||
-          extractFromSrcset(img.getAttribute("srcset"));
+const p=el.closest("p,div,li,span");
 
-        if (!src) return;
+if(p) p.remove();
+else el.remove();
 
-        src = absolutizeUrl(src);
+});
 
-        img.src = src;
-        img.removeAttribute("srcset");
-        img.removeAttribute("loading");
-        img.removeAttribute("data-src");
-        img.removeAttribute("data-lazy-src");
-        img.removeAttribute("data-original");
-        img.removeAttribute("data-image");
+}
 
-        img.onerror = function () {
-          const link = img.closest("a");
-          const figure = img.closest("figure");
-          const wrapper = img.parentElement;
+function fixImages(contentNode){
 
-          if (link) link.classList.add("hidden-broken");
-          if (figure) figure.classList.add("hidden-broken");
-          if (wrapper && wrapper !== link && wrapper !== figure) {
-            wrapper.classList.add("hidden-broken");
-          }
+contentNode.querySelectorAll("img").forEach(img=>{
 
-          img.classList.add("hidden-broken");
-        };
-      });
+let src=img.getAttribute("src");
 
-      contentNode.querySelectorAll("source").forEach(source => source.remove());
+if(!src) return;
 
-      contentNode.querySelectorAll("picture").forEach(pic => {
-        const img = pic.querySelector("img");
-        if (img) {
-          pic.replaceWith(img);
-        }
-      });
-    }
+img.src=absolutizeUrl(src);
 
-    function fixLinks(contentNode) {
-      contentNode.querySelectorAll("a").forEach(a => {
-        const href = a.getAttribute("href");
-        if (!href) return;
+});
 
-        if (
-          href.startsWith("#") ||
-          href.startsWith("mailto:") ||
-          href.startsWith("tel:")
-        ) {
-          return;
-        }
+}
 
-        a.href = absolutizeUrl(href);
-        a.target = "_blank";
-        a.rel = "noopener noreferrer";
-      });
-    }
+function fixLinks(contentNode){
 
-    function linkEventTitles(contentNode) {
-      const headings = Array.from(contentNode.querySelectorAll("h2, h3"));
+contentNode.querySelectorAll("a").forEach(a=>{
 
-      headings.forEach(heading => {
-        if (heading.querySelector("a")) return;
+let href=a.getAttribute("href");
 
-        let cursor = heading.nextElementSibling;
-        let foundLink = null;
+if(!href) return;
 
-        while (cursor) {
-          if (cursor.matches("h2, h3")) break;
+if(href.startsWith("#")) return;
 
-          const imageLink = cursor.matches("a") && cursor.querySelector("img")
-            ? cursor
-            : cursor.querySelector("a:has(img)");
+a.href=absolutizeUrl(href);
 
-          if (imageLink && isUsefulExternalLink(imageLink.href)) {
-            foundLink = imageLink.href;
-            break;
-          }
+a.target="_blank";
+a.rel="noopener noreferrer";
 
-          const normalLinks = Array.from(cursor.querySelectorAll("a"));
-          const useful = normalLinks.find(a => isUsefulExternalLink(a.href));
-          if (useful) {
-            foundLink = useful.href;
-            break;
-          }
+});
 
-          cursor = cursor.nextElementSibling;
-        }
+}
 
-        if (foundLink) {
-          const titleText = heading.textContent.trim();
-          heading.innerHTML = `<a href="${foundLink}" target="_blank" rel="noopener noreferrer">${titleText}</a>`;
-        }
-      });
-    }
+function linkEventTitles(contentNode){
 
-    function styleExternalLinks(contentNode) {
-      contentNode.querySelectorAll("a").forEach(a => {
-        const href = a.getAttribute("href") || "";
-        const hasImage = !!a.querySelector("img");
+const headings=contentNode.querySelectorAll("h2,h3");
 
-        if (isUsefulExternalLink(href) && !hasImage) {
-          const txt = (a.textContent || "").trim();
+headings.forEach(h=>{
 
-          if (
-            txt &&
-            txt.length < 120 &&
-            !a.closest("h2") &&
-            !a.closest("h3")
-          ) {
-            a.classList.add("event-link-button");
-            if (!a.textContent.trim().toLowerCase().includes("site")) {
-              a.textContent = "Voir le site officiel";
-            }
-          }
-        }
-      });
-    }
+if(h.querySelector("a")) return;
 
-    function cleanupEmptyWrappers(contentNode) {
-      contentNode.querySelectorAll("a, p, div, figure, span").forEach(el => {
-        const text = (el.textContent || "").trim();
-        const visibleImgs = el.querySelectorAll("img:not(.hidden-broken)");
-        const visibleButtons = el.querySelectorAll("a.event-link-button");
-        if (text === "" && visibleImgs.length === 0 && visibleButtons.length === 0 && el.children.length === 0) {
-          el.remove();
-        }
-      });
-    }
+let next=h.nextElementSibling;
+let found=null;
 
-    async function loadArticle() {
-      const articleUrl = getParam("url");
+while(next){
 
-      if (!articleUrl) {
-        document.getElementById("article").innerHTML =
-          '<div class="error">Aucun article indiqué.</div>';
-        return;
-      }
+if(next.matches("h2,h3")) break;
 
-      try {
-        const res = await fetch(articleUrl);
-        const html = await res.text();
-        const doc = new DOMParser().parseFromString(html, "text/html");
+const imgLink=next.querySelector("a img");
 
-        const title =
-          doc.querySelector('meta[property="og:title"]')?.content ||
-          doc.querySelector("h1")?.innerText ||
-          "Article";
+if(imgLink){
 
-        const heroImage =
-          doc.querySelector('meta[property="og:image"]')?.content || "";
+const link=imgLink.closest("a");
 
-        let sourceNode =
-          doc.querySelector("article") ||
-          doc.querySelector("main") ||
-          doc.querySelector(".blog-post") ||
-          doc.querySelector(".post-content") ||
-          doc.body;
+if(link && link.href){
 
-        if (!sourceNode) {
-          document.getElementById("article").innerHTML =
-            '<div class="error">Contenu introuvable.</div>';
-          return;
-        }
+found=link.href;
+break;
 
-        let contentNode = sourceNode.cloneNode(true);
+}
 
-        removeMetaBlocks(contentNode);
-        removeKeywordBlocks(contentNode);
-        fixImages(contentNode);
-        fixLinks(contentNode);
-        linkEventTitles(contentNode);
-        styleExternalLinks(contentNode);
-        cleanupEmptyWrappers(contentNode);
+}
 
-        document.title = title + " – Actus 88";
+next=next.nextElementSibling;
 
-        document.getElementById("article").innerHTML = `
-          <h1>${title}</h1>
-          ${heroImage ? `<img class="hero-image" src="${absolutizeUrl(heroImage)}" alt="${title}">` : ""}
-          <div class="content">${contentNode.innerHTML}</div>
-        `;
-      } catch (e) {
-        document.getElementById("article").innerHTML =
-          '<div class="error">Impossible de charger cet article.</div>';
-      }
-    }
+}
 
-    loadArticle();
-  </script>
+if(found){
+
+const text=h.textContent.trim();
+
+h.innerHTML=
+'<a href="'+found+'" target="_blank">'+text+'</a>';
+
+}
+
+});
+
+}
+
+async function loadArticle(){
+
+const articleUrl=getParam("url");
+
+if(!articleUrl){
+
+document.getElementById("article").innerHTML=
+'<div class="error">Aucun article indiqué.</div>';
+
+return;
+
+}
+
+try{
+
+const res=await fetch(articleUrl);
+const html=await res.text();
+
+const doc=new DOMParser().parseFromString(html,"text/html");
+
+const title=
+doc.querySelector('meta[property="og:title"]')?.content
+|| doc.querySelector("h1")?.innerText
+|| "Article";
+
+const hero=
+doc.querySelector('meta[property="og:image"]')?.content
+|| "";
+
+let sourceNode=
+doc.querySelector("article")
+|| doc.querySelector("main")
+|| doc.querySelector(".blog-post")
+|| doc.body;
+
+let contentNode=sourceNode.cloneNode(true);
+
+cleanContent(contentNode);
+
+fixImages(contentNode);
+
+fixLinks(contentNode);
+
+linkEventTitles(contentNode);
+
+document.title=title+" – Actus 88";
+
+document.getElementById("article").innerHTML=`
+
+<h1>${title}</h1>
+
+${hero?'<img class="hero-image" src="'+hero+'">':""}
+
+<div class="content">
+
+${contentNode.innerHTML}
+
+</div>
+
+`;
+
+}
+
+catch(e){
+
+document.getElementById("article").innerHTML=
+'<div class="error">Impossible de charger cet article.</div>';
+
+}
+
+}
+
+loadArticle();
+
+</script>
 
 </body>
 </html>
