@@ -78,6 +78,15 @@
       margin: 0 0 16px;
     }
 
+    .content img {
+      max-width: 100%;
+      border-radius: 14px;
+      display: block;
+      margin: 24px auto;
+      height: auto;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
     .content a {
       color: #8b1e2d;
       word-break: break-word;
@@ -96,6 +105,10 @@
       border-radius: 18px;
       padding: 24px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+
+    .hidden-broken {
+      display: none !important;
     }
 
     .event-link-button {
@@ -138,9 +151,23 @@
       return "https://www.flatshaker.fr/" + url.replace(/^\.?\//, "");
     }
 
+    function extractFromSrcset(srcset) {
+      if (!srcset) return "";
+      return srcset.split(",")[0].trim().split(" ")[0];
+    }
+
+    function isUsefulExternalLink(href) {
+      if (!href) return false;
+      const h = href.toLowerCase();
+      if (h.startsWith("#") || h.startsWith("mailto:") || h.startsWith("tel:")) return false;
+      if (h.includes("flatshaker.fr")) return false;
+      if (h.includes("hotemoselottebnb.fr")) return false;
+      return h.startsWith("http://") || h.startsWith("https://") || h.startsWith("/");
+    }
+
     function removeMetaBlocks(contentNode) {
       contentNode.querySelectorAll(
-        "script,style,nav,header,footer,form,button,aside,picture,source,img"
+        "script,style,nav,header,footer,form,button,aside"
       ).forEach(el => el.remove());
 
       contentNode.querySelectorAll(
@@ -148,7 +175,7 @@
       ).forEach(el => el.remove());
 
       contentNode.querySelectorAll(
-        'a[href*="/blog/auteurs/"],a[href*="/blog/categories/"]'
+        'a[href*="/blog/auteurs/"],a[href*="/blog/categories/"],a[href*="/blog/mots-cles/"]'
       ).forEach(el => {
         const parent = el.closest("p,div,span,li");
         if (parent) parent.remove();
@@ -156,6 +183,8 @@
       });
 
       contentNode.querySelectorAll("div,p,span,li").forEach(el => {
+        if (el.querySelector("img")) return;
+
         const txt = (el.textContent || "").trim();
 
         const isMetaBlock =
@@ -163,12 +192,97 @@
           txt.includes("👤") ||
           txt.includes("📁") ||
           txt.includes("🗓") ||
+          txt.includes("🏷") ||
           txt.includes("Hôte-Moselotte bnb") ||
           txt === "Évènements" ||
-          txt === "Evènements";
+          txt === "Evènements" ||
+          txt === "Mots-clés" ||
+          txt === "Mots clés" ||
+          txt === "Tags";
 
-        if (isMetaBlock && txt.length < 150) {
+        if (isMetaBlock && txt.length < 180) {
           el.remove();
+        }
+      });
+    }
+
+    function removeKeywordBlocks(contentNode) {
+      const all = Array.from(contentNode.querySelectorAll("div,section,aside,p,ul"));
+      all.forEach(el => {
+        const txt = (el.textContent || "").trim().toLowerCase();
+
+        const hasKeywordLinks = el.querySelector('a[href*="/blog/mots-cles/"]');
+        const looksLikeKeywords =
+          txt.includes("mots-clés") ||
+          txt.includes("mots clés") ||
+          txt.includes("tags") ||
+          txt.includes("location saisonnière") ||
+          txt.includes("evenements") ||
+          txt.includes("évènements") ||
+          txt.includes("vacances");
+
+        if (hasKeywordLinks) {
+          el.remove();
+          return;
+        }
+
+        if (
+          looksLikeKeywords &&
+          !el.querySelector("img") &&
+          !el.querySelector("h2,h3")
+        ) {
+          const links = el.querySelectorAll("a");
+          const onlyKeywordishLinks = links.length > 0 && Array.from(links).every(a =>
+            (a.getAttribute("href") || "").includes("/blog/mots-cles/")
+          );
+          if (onlyKeywordishLinks) el.remove();
+        }
+      });
+    }
+
+    function fixImages(contentNode) {
+      contentNode.querySelectorAll("img").forEach(img => {
+        let src =
+          img.getAttribute("src") ||
+          img.getAttribute("data-src") ||
+          img.getAttribute("data-lazy-src") ||
+          img.getAttribute("data-original") ||
+          img.getAttribute("data-image") ||
+          extractFromSrcset(img.getAttribute("srcset"));
+
+        if (!src) return;
+
+        src = absolutizeUrl(src);
+
+        img.src = src;
+        img.removeAttribute("srcset");
+        img.removeAttribute("loading");
+        img.removeAttribute("data-src");
+        img.removeAttribute("data-lazy-src");
+        img.removeAttribute("data-original");
+        img.removeAttribute("data-image");
+
+        img.onerror = function () {
+          const link = img.closest("a");
+          const figure = img.closest("figure");
+          const wrapper = img.parentElement;
+
+          if (link) link.classList.add("hidden-broken");
+          if (figure) figure.classList.add("hidden-broken");
+          if (wrapper && wrapper !== link && wrapper !== figure) {
+            wrapper.classList.add("hidden-broken");
+          }
+
+          img.classList.add("hidden-broken");
+        };
+      });
+
+      contentNode.querySelectorAll("source").forEach(source => source.remove());
+
+      contentNode.querySelectorAll("picture").forEach(pic => {
+        const img = pic.querySelector("img");
+        if (img) {
+          pic.replaceWith(img);
         }
       });
     }
@@ -192,35 +306,40 @@
       });
     }
 
-    function isUsefulExternalLink(href) {
-      if (!href) return false;
-      const h = href.toLowerCase();
-      if (!h.startsWith("http")) return false;
-      if (h.includes("flatshaker.fr")) return false;
-      if (h.includes("hotemoselottebnb.fr")) return false;
-      return true;
-    }
-
     function linkEventTitles(contentNode) {
       const headings = Array.from(contentNode.querySelectorAll("h2, h3"));
 
       headings.forEach(heading => {
-        let next = heading.nextElementSibling;
+        if (heading.querySelector("a")) return;
+
+        let cursor = heading.nextElementSibling;
         let foundLink = null;
 
-        while (next) {
-          if (next.matches("h2, h3")) break;
+        while (cursor) {
+          if (cursor.matches("h2, h3")) break;
 
-          const links = Array.from(next.querySelectorAll("a"));
-          foundLink = links.find(a => isUsefulExternalLink(a.href));
+          const imageLink = cursor.matches("a") && cursor.querySelector("img")
+            ? cursor
+            : cursor.querySelector("a:has(img)");
 
-          if (foundLink) break;
-          next = next.nextElementSibling;
+          if (imageLink && isUsefulExternalLink(imageLink.href)) {
+            foundLink = imageLink.href;
+            break;
+          }
+
+          const normalLinks = Array.from(cursor.querySelectorAll("a"));
+          const useful = normalLinks.find(a => isUsefulExternalLink(a.href));
+          if (useful) {
+            foundLink = useful.href;
+            break;
+          }
+
+          cursor = cursor.nextElementSibling;
         }
 
-        if (foundLink && !heading.querySelector("a")) {
+        if (foundLink) {
           const titleText = heading.textContent.trim();
-          heading.innerHTML = `<a href="${foundLink.href}" target="_blank" rel="noopener noreferrer">${titleText}</a>`;
+          heading.innerHTML = `<a href="${foundLink}" target="_blank" rel="noopener noreferrer">${titleText}</a>`;
         }
       });
     }
@@ -228,19 +347,33 @@
     function styleExternalLinks(contentNode) {
       contentNode.querySelectorAll("a").forEach(a => {
         const href = a.getAttribute("href") || "";
-        const txt = (a.textContent || "").trim();
+        const hasImage = !!a.querySelector("img");
 
-        if (
-          isUsefulExternalLink(href) &&
-          txt &&
-          txt.length < 120 &&
-          !a.closest("h2") &&
-          !a.closest("h3")
-        ) {
-          a.classList.add("event-link-button");
-          if (!txt.toLowerCase().includes("site")) {
-            a.textContent = "Voir le site officiel";
+        if (isUsefulExternalLink(href) && !hasImage) {
+          const txt = (a.textContent || "").trim();
+
+          if (
+            txt &&
+            txt.length < 120 &&
+            !a.closest("h2") &&
+            !a.closest("h3")
+          ) {
+            a.classList.add("event-link-button");
+            if (!a.textContent.trim().toLowerCase().includes("site")) {
+              a.textContent = "Voir le site officiel";
+            }
           }
+        }
+      });
+    }
+
+    function cleanupEmptyWrappers(contentNode) {
+      contentNode.querySelectorAll("a, p, div, figure, span").forEach(el => {
+        const text = (el.textContent || "").trim();
+        const visibleImgs = el.querySelectorAll("img:not(.hidden-broken)");
+        const visibleButtons = el.querySelectorAll("a.event-link-button");
+        if (text === "" && visibleImgs.length === 0 && visibleButtons.length === 0 && el.children.length === 0) {
+          el.remove();
         }
       });
     }
@@ -283,9 +416,12 @@
         let contentNode = sourceNode.cloneNode(true);
 
         removeMetaBlocks(contentNode);
+        removeKeywordBlocks(contentNode);
+        fixImages(contentNode);
         fixLinks(contentNode);
         linkEventTitles(contentNode);
         styleExternalLinks(contentNode);
+        cleanupEmptyWrappers(contentNode);
 
         document.title = title + " – Actus 88";
 
