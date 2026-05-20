@@ -55,12 +55,24 @@ async function build() {
       else $(el).remove();
     });
 
-    // Correction des images
+    // Correction des images (Gère le lazy-loading de Flatshaker)
     contentNode.find('img').each((i, el) => {
-      let src = $(el).attr('src');
-      if (src && !src.startsWith('http')) {
-        $(el).attr('src', src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`);
+      // On cherche la vraie image cachée
+      let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
+      
+      if (src) {
+        if (!src.startsWith('http')) {
+          src = src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`;
+        }
+        $(el).attr('src', src);
       }
+      
+      // On supprime les attributs qui bloquent l'affichage
+      $(el).removeAttr('srcset');
+      $(el).removeAttr('sizes');
+      $(el).removeAttr('loading');
+      $(el).removeAttr('data-src');
+      $(el).removeAttr('data-lazy-src');
     });
 
     // Correction des liens
