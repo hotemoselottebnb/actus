@@ -55,24 +55,34 @@ async function build() {
       else $(el).remove();
     });
 
-    // Correction des images (Gère le lazy-loading de Flatshaker)
+    // Correction des images : solution ultime
     contentNode.find('img').each((i, el) => {
-      // On cherche la vraie image cachée
-      let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
+      // 1. Chercher la vraie URL dans tous les attributs possibles
+      let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('data-orig-file') || $(el).attr('src');
+      let srcset = $(el).attr('data-srcset') || $(el).attr('srcset');
       
-      if (src) {
-        if (!src.startsWith('http')) {
+      // 2. Si on tombe sur un "fantôme" (image base64), on force la lecture du srcset
+      if (src && src.startsWith('data:') && srcset) {
+        let urls = srcset.split(',').map(s => s.trim().split(' ')[0]).filter(u => u && !u.startsWith('data:'));
+        if (urls.length > 0) src = urls[urls.length - 1]; // On prend la meilleure résolution
+      }
+
+      // 3. Si on a trouvé une vraie URL exploitable
+      if (src && !src.startsWith('data:')) {
+        src = src.trim();
+        if (src.startsWith('//')) {
+          src = 'https:' + src; // Corrige les liens sans "http"
+        } else if (!src.startsWith('http')) {
           src = src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`;
         }
         $(el).attr('src', src);
+      } else {
+        // 4. Si aucune image n'existe (pixel vide), on cache la balise pour éviter l'icône cassée
+        $(el).css('display', 'none');
       }
-      
-      // On supprime les attributs qui bloquent l'affichage
-      $(el).removeAttr('srcset');
-      $(el).removeAttr('sizes');
-      $(el).removeAttr('loading');
-      $(el).removeAttr('data-src');
-      $(el).removeAttr('data-lazy-src');
+
+      // 5. Nettoyage absolu des attributs qui créent des conflits
+      $(el).removeAttr('srcset sizes loading data-src data-lazy-src data-srcset data-orig-file');
     });
 
     // Correction des liens
