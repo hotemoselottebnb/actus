@@ -1,0 +1,33 @@
+name: Synchronisation Actus 88
+on:
+  schedule:
+    - cron: "0 4 * * *" # Tous les jours à 4h00 du matin
+  workflow_dispatch: # Permet de lancer manuellement
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Télécharger le code
+        uses: actions/checkout@v4
+      
+      - name: Préparer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Installer les outils
+        run: npm install
+        
+      - name: Construire le site statique
+        run: node build.js
+        
+      - name: Sauvegarder sur GitHub
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -m "Mise à jour automatique des articles" || echo "Aucun nouvel article"
+          git push
