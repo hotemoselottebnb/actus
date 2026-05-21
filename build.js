@@ -12,8 +12,7 @@ async function build() {
   const urls = [...sitemapXml.matchAll(/<loc>(.*?)<\/loc>/g)]
     .map(m => m[1])
     .filter(url => url.includes("actus-88"))
-    .reverse()
-    .slice(0, 12);
+    .reverse();
 
   let cardsHtml = "";
   if (!fs.existsSync('./articles')) fs.mkdirSync('./articles');
