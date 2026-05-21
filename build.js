@@ -54,13 +54,14 @@ async function build() {
       else $(el).remove();
     });
 
-   // Correction des images : On force la Haute Définition
+  // Correction des images : Version Finale (Nette + Anti-disparition)
     contentNode.find('img').each((i, el) => {
-      let src = $(el).attr('src');
+      // 1. On cherche d'abord dans les attributs de lazy-loading, puis dans le src normal
+      let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
       
-      if (src) {
-        // Astuce magique : On efface les dimensions (ex: "-300x200") à la fin de l'adresse de l'image
-        // pour forcer le chargement de la photo originale en Haute Définition.
+      // 2. Si on trouve une adresse valide (et pas une image transparente base64)
+      if (src && !src.startsWith('data:')) {
+        // Astuce netteté : On efface les dimensions de miniature (ex: "-300x200")
         src = src.replace(/-\d+x\d+(?=\.[a-zA-Z]+$)/, '');
         src = src.trim();
         
@@ -70,9 +71,15 @@ async function build() {
           src = src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`;
         }
         $(el).attr('src', src);
-      } else {
+        $(el).css('display', ''); // On s'assure que l'image est bien visible
+      } else if (src && src.startsWith('data:')) {
+        // Si c'est un placeholder transparent, on le cache pour éviter les carrés blancs
         $(el).css('display', 'none');
       }
+
+      // 3. Nettoyage absolu pour éviter les conflits de chargement
+      $(el).removeAttr('srcset sizes loading width height data-src data-lazy-src data-srcset data-orig-file');
+    });
 
       // Nettoyage : On supprime les attributs qui bloquent l'affichage ou forcent une petite taille
       $(el).removeAttr('srcset sizes loading width height data-src data-lazy-src data-srcset data-orig-file');
