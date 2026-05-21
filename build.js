@@ -33,16 +33,13 @@ async function build() {
 
         const title = $('meta[property="og:title"]').attr('content') || $('h1').text().trim() || slug.replace(/-/g, ' ');
         
-        // --- CORRECTION CHIRURGICALE IMAGE ACCUEIL ---
+        // Image d'accueil (Le og:image est presque toujours la version HD originale)
         let image = $('meta[property="og:image"]').attr('content') || "";
-        if (image) {
-          image = image.split('?')[0]; // Enlève les paramètres
-          // Remplace les miniatures WordPress (ex: -300x200.jpg) par l'original (.jpg)
-          image = image.replace(/-(\d+)x(\d+)\.(jpg|jpeg|png|gif|webp)$|(\.(jpg|jpeg|png|gif|webp))_.*$/i, '.$3$5');
-        }
+        if (image) image = image.split('?')[0]; 
         
         const excerpt = $('article p, main p, .blog-post p').first().text().substring(0, 180) + "...";
 
+        // BOUTON "LIRE L'ARTICLE" sur la page d'accueil
         cardsHtml += `
           <article class="card">
             <div class="card-image" style="background-image:url('${image}'); background-size:cover; background-position:center"></div>
@@ -66,14 +63,41 @@ async function build() {
 
         contentNode.find('figure, div, span, a').removeAttr('style');
 
-        // --- CORRECTION CHIRURGICALE IMAGES ARTICLE ---
+        // --- L'ARME ABSOLUE POUR LES IMAGES HD ---
         contentNode.find('img').each((i, el) => {
-          let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
+          let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src') || '';
+          
+          // 1. Scanner le dictionnaire des résolutions (srcset) pour trouver la plus grande !
+          let srcset = $(el).attr('data-srcset') || $(el).attr('srcset') || '';
+          if (srcset) {
+            let maxW = 0;
+            let bestUrl = '';
+            srcset.split(',').forEach(p => {
+              let chunks = p.trim().split(/\s+/);
+              if (chunks.length >= 2) {
+                let wMatch = chunks[1].match(/(\d+)w/);
+                if (wMatch) {
+                  let w = parseInt(wMatch[1], 10);
+                  if (w > maxW) {
+                    maxW = w;
+                    bestUrl = chunks[0];
+                  }
+                }
+              } else if (chunks.length === 1 && maxW === 0) {
+                bestUrl = chunks[0];
+              }
+            });
+            if (bestUrl && !bestUrl.startsWith('data:')) src = bestUrl;
+          }
+
+          // 2. Si l'image est un lien cliquable vers la HD, on vole l'adresse !
+          let parentHref = $(el).closest('a').attr('href');
+          if (parentHref && parentHref.match(/\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i)) {
+            src = parentHref; 
+          }
+
           if (src && !src.startsWith('data:')) {
-            src = src.split('?')[0].trim();
-            
-            // Force la version originale HD
-            src = src.replace(/-(\d+)x(\d+)\.(jpg|jpeg|png|gif|webp)$|(\.(jpg|jpeg|png|gif|webp))_.*$/i, '.$3$5');
+            src = src.split('?')[0].trim(); // On nettoie
             
             if (src.startsWith('//')) src = 'https:' + src;
             else if (!src.startsWith('http')) src = src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`;
@@ -83,6 +107,8 @@ async function build() {
           } else if (src && src.startsWith('data:')) {
             $(el).css('display', 'none');
           }
+          
+          // On détruit tous les faux attributs qui pourraient ramener le flou
           $(el).removeAttr('srcset sizes loading width height data-src data-lazy-src data-srcset data-orig-file style');
         });
 
