@@ -33,16 +33,16 @@ async function build() {
 
         const title = $('meta[property="og:title"]').attr('content') || $('h1').text().trim() || slug.replace(/-/g, ' ');
         
-        // Nettoyage agressif de l'image d'accueil pour la HD
+        // --- CORRECTION CHIRURGICALE IMAGE ACCUEIL ---
         let image = $('meta[property="og:image"]').attr('content') || "";
         if (image) {
-          image = image.split('?')[0]; // Enlève les codes parasites à la fin
-          image = image.replace(/-\d+x\d+(?=\.[a-zA-Z0-9]+$)/, ''); // Enlève les dimensions de miniature
+          image = image.split('?')[0]; // Enlève les paramètres
+          // Remplace les miniatures WordPress (ex: -300x200.jpg) par l'original (.jpg)
+          image = image.replace(/-(\d+)x(\d+)\.(jpg|jpeg|png|gif|webp)$|(\.(jpg|jpeg|png|gif|webp))_.*$/i, '.$3$5');
         }
         
         const excerpt = $('article p, main p, .blog-post p').first().text().substring(0, 180) + "...";
 
-        // BOUTON "LIRE L'ARTICLE" SUR LES CARTES
         cardsHtml += `
           <article class="card">
             <div class="card-image" style="background-image:url('${image}'); background-size:cover; background-position:center"></div>
@@ -66,13 +66,14 @@ async function build() {
 
         contentNode.find('figure, div, span, a').removeAttr('style');
 
-        // Nettoyage agressif des images dans l'article pour la HD
+        // --- CORRECTION CHIRURGICALE IMAGES ARTICLE ---
         contentNode.find('img').each((i, el) => {
           let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
           if (src && !src.startsWith('data:')) {
-            src = src.split('?')[0]; // Coupe tous les paramètres qui réduisent la taille
-            src = src.replace(/-\d+x\d+(?=\.[a-zA-Z0-9]+)/, ''); // Coupe les dimensions miniatures
-            src = src.trim();
+            src = src.split('?')[0].trim();
+            
+            // Force la version originale HD
+            src = src.replace(/-(\d+)x(\d+)\.(jpg|jpeg|png|gif|webp)$|(\.(jpg|jpeg|png|gif|webp))_.*$/i, '.$3$5');
             
             if (src.startsWith('//')) src = 'https:' + src;
             else if (!src.startsWith('http')) src = src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`;
