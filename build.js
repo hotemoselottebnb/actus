@@ -1,7 +1,6 @@
 const fs = require('fs');
 const cheerio = require('cheerio');
 
-// Petite fonction pour faire une pause et éviter de bloquer le serveur
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 async function build() {
@@ -11,7 +10,6 @@ async function build() {
     const sitemapRes = await fetch("https://www.flatshaker.fr/sitemap.xml");
     const sitemapXml = await sitemapRes.text();
 
-    // On récupère TOUS les articles (limite retirée)
     const urls = [...sitemapXml.matchAll(/<loc>(.*?)<\/loc>/g)]
       .map(m => m[1])
       .filter(url => url.includes("actus-88"))
@@ -25,7 +23,6 @@ async function build() {
         console.log(`Traitement de : ${url}`);
         const slug = url.split('/').filter(Boolean).pop();
 
-        // Pause de 0.5 seconde pour ne pas alerter la sécurité de Flatshaker
         await delay(500);
 
         const res = await fetch(url);
@@ -36,18 +33,18 @@ async function build() {
 
         const title = $('meta[property="og:title"]').attr('content') || $('h1').text().trim() || slug.replace(/-/g, ' ');
         let image = $('meta[property="og:image"]').attr('content') || "";
-        // On nettoie aussi l'image d'accueil pour qu'elle soit nette
         if (image) image = image.replace(/-\d+x\d+(?=\.[a-zA-Z]+$)/, '');
         
         const excerpt = $('article p, main p, .blog-post p').first().text().substring(0, 180) + "...";
 
+        // 1. Bouton "Lire l'article" restauré sur l'accueil
         cardsHtml += `
           <article class="card">
             <div class="card-image" style="background-image:url('${image}'); background-size:cover; background-position:center"></div>
             <div class="card-content">
               <h3>${title}</h3>
               <p>${excerpt}</p>
-              <a class="button" href="./articles/${slug}.html">Réservez un séjour</a>
+              <a class="button" href="./articles/${slug}.html">Lire l’article</a>
             </div>
           </article>
         `;
@@ -62,7 +59,9 @@ async function build() {
           else $(el).remove();
         });
 
-        // Correction des images : Version Finale (Nette + Anti-disparition)
+        // 2. On casse les "boites" qui bloquent la taille des images
+        contentNode.find('figure, div, span, a').removeAttr('style');
+
         contentNode.find('img').each((i, el) => {
           let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
           if (src && !src.startsWith('data:')) {
@@ -75,7 +74,7 @@ async function build() {
           } else if (src && src.startsWith('data:')) {
             $(el).css('display', 'none');
           }
-          $(el).removeAttr('srcset sizes loading width height data-src data-lazy-src data-srcset data-orig-file');
+          $(el).removeAttr('srcset sizes loading width height data-src data-lazy-src data-srcset data-orig-file style');
         });
 
         contentNode.find('a').each((i, el) => {
@@ -102,6 +101,7 @@ async function build() {
           }
         });
 
+        // 3. Bouton retour en bas ajouté et images forcées à 100% (CSS .content img)
         const articleHtml = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -123,8 +123,9 @@ async function build() {
     .content h2, .content h3{margin-top:30px;color:#8b1e2d;}
     .content h2 a, .content h3 a{color:#8b1e2d;text-decoration:none;}
     .content h2 a:hover, .content h3 a:hover{text-decoration:underline;}
-    .content img{max-width:100%;border-radius:14px;margin:24px auto;display:block;box-shadow:0 6px 20px rgba(0,0,0,0.08);}
+    .content img{width:100%; max-width:100%; height:auto; border-radius:14px; margin:24px auto; display:block; box-shadow:0 6px 20px rgba(0,0,0,0.08);}
     .back{display:inline-block;margin-bottom:18px;text-decoration:none;color:#8b1e2d;font-weight:bold;}
+    .back-bottom{margin-top:28px;}
   </style>
 </head>
 <body>
@@ -141,6 +142,7 @@ async function build() {
     <div class="content">
       ${contentNode.html()}
     </div>
+    <a class="back back-bottom" href="../">← Revenir à la liste des articles</a>
   </main>
 </body>
 </html>`;
