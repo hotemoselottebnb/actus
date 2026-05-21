@@ -32,12 +32,17 @@ async function build() {
         const $ = cheerio.load(html);
 
         const title = $('meta[property="og:title"]').attr('content') || $('h1').text().trim() || slug.replace(/-/g, ' ');
+        
+        // Nettoyage agressif de l'image d'accueil pour la HD
         let image = $('meta[property="og:image"]').attr('content') || "";
-        if (image) image = image.replace(/-\d+x\d+(?=\.[a-zA-Z]+$)/, '');
+        if (image) {
+          image = image.split('?')[0]; // Enlève les codes parasites à la fin
+          image = image.replace(/-\d+x\d+(?=\.[a-zA-Z0-9]+$)/, ''); // Enlève les dimensions de miniature
+        }
         
         const excerpt = $('article p, main p, .blog-post p').first().text().substring(0, 180) + "...";
 
-        // 1. Bouton "Lire l'article" restauré sur l'accueil
+        // BOUTON "LIRE L'ARTICLE" SUR LES CARTES
         cardsHtml += `
           <article class="card">
             <div class="card-image" style="background-image:url('${image}'); background-size:cover; background-position:center"></div>
@@ -59,16 +64,19 @@ async function build() {
           else $(el).remove();
         });
 
-        // 2. On casse les "boites" qui bloquent la taille des images
         contentNode.find('figure, div, span, a').removeAttr('style');
 
+        // Nettoyage agressif des images dans l'article pour la HD
         contentNode.find('img').each((i, el) => {
           let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
           if (src && !src.startsWith('data:')) {
-            src = src.replace(/-\d+x\d+(?=\.[a-zA-Z]+$)/, '');
+            src = src.split('?')[0]; // Coupe tous les paramètres qui réduisent la taille
+            src = src.replace(/-\d+x\d+(?=\.[a-zA-Z0-9]+)/, ''); // Coupe les dimensions miniatures
             src = src.trim();
+            
             if (src.startsWith('//')) src = 'https:' + src;
             else if (!src.startsWith('http')) src = src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`;
+            
             $(el).attr('src', src);
             $(el).css('display', '');
           } else if (src && src.startsWith('data:')) {
@@ -101,7 +109,6 @@ async function build() {
           }
         });
 
-        // 3. Bouton retour en bas ajouté et images forcées à 100% (CSS .content img)
         const articleHtml = `<!DOCTYPE html>
 <html lang="fr">
 <head>
