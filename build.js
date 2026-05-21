@@ -1,118 +1,108 @@
 const fs = require('fs');
 const cheerio = require('cheerio');
 
+// Petite fonction pour faire une pause et éviter de bloquer le serveur
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
 async function build() {
   console.log("Début de la synchronisation des articles...");
 
-  // 1. Récupérer le sitemap
-  const sitemapRes = await fetch("https://www.flatshaker.fr/sitemap.xml");
-  const sitemapXml = await sitemapRes.text();
+  try {
+    const sitemapRes = await fetch("https://www.flatshaker.fr/sitemap.xml");
+    const sitemapXml = await sitemapRes.text();
 
-  // Extraire les URLs
-  const urls = [...sitemapXml.matchAll(/<loc>(.*?)<\/loc>/g)]
-    .map(m => m[1])
-    .filter(url => url.includes("actus-88"))
-    .reverse();
+    // On récupère TOUS les articles (limite retirée)
+    const urls = [...sitemapXml.matchAll(/<loc>(.*?)<\/loc>/g)]
+      .map(m => m[1])
+      .filter(url => url.includes("actus-88"))
+      .reverse();
 
-  let cardsHtml = "";
-  if (!fs.existsSync('./articles')) fs.mkdirSync('./articles');
+    let cardsHtml = "";
+    if (!fs.existsSync('./articles')) fs.mkdirSync('./articles');
 
-  for (const url of urls) {
-    console.log(`Traitement de : ${url}`);
-    const slug = url.split('/').filter(Boolean).pop();
+    for (const url of urls) {
+      try {
+        console.log(`Traitement de : ${url}`);
+        const slug = url.split('/').filter(Boolean).pop();
 
-    const res = await fetch(url);
-    const html = await res.text();
-    const $ = cheerio.load(html);
+        // Pause de 0.5 seconde pour ne pas alerter la sécurité de Flatshaker
+        await delay(500);
 
-    // Extraction des métadonnées
-    const title = $('meta[property="og:title"]').attr('content') || $('h1').text().trim() || slug.replace(/-/g, ' ');
-    const image = $('meta[property="og:image"]').attr('content') || "";
-    const excerpt = $('article p, main p, .blog-post p').first().text().substring(0, 180) + "...";
-
-    // Génération de la carte pour la page d'accueil
-    cardsHtml += `
-      <article class="card">
-        <div class="card-image" style="background-image:url('${image}'); background-size:cover; background-position:center"></div>
-        <div class="card-content">
-          <h3>${title}</h3>
-          <p>${excerpt}</p>
-          <a class="button" href="./articles/${slug}.html">Lire l’article</a>
-        </div>
-      </article>
-    `;
-
-    // Isolement et nettoyage du contenu de l'article
-    let contentNode = $('article, main, .blog-post').first();
-    if (!contentNode.length) contentNode = $('body');
-
-    // Nettoyage : Suppression des éléments inutiles et des tags/mots-clés
-    contentNode.find('script, style, nav, header, footer, form, button, aside').remove();
-    contentNode.find('a[href*="/blog/auteurs/"], a[href*="/blog/categories/"], a[href*="/blog/mots-cles/"]').each((i, el) => {
-      const parent = $(el).closest('p, div, li, span');
-      if (parent.length) parent.remove();
-      else $(el).remove();
-    });
-
-  // Correction des images : Version Finale (Nette + Anti-disparition)
-    contentNode.find('img').each((i, el) => {
-      // 1. On cherche d'abord dans les attributs de lazy-loading, puis dans le src normal
-      let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
-      
-      // 2. Si on trouve une adresse valide (et pas une image transparente base64)
-      if (src && !src.startsWith('data:')) {
-        // Astuce netteté : On efface les dimensions de miniature (ex: "-300x200")
-        src = src.replace(/-\d+x\d+(?=\.[a-zA-Z]+$)/, '');
-        src = src.trim();
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Impossible de charger la page (Erreur ${res.status})`);
         
-        if (src.startsWith('//')) {
-          src = 'https:' + src;
-        } else if (!src.startsWith('http')) {
-          src = src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`;
-        }
-        $(el).attr('src', src);
-        $(el).css('display', ''); // On s'assure que l'image est bien visible
-      } else if (src && src.startsWith('data:')) {
-        // Si c'est un placeholder transparent, on le cache pour éviter les carrés blancs
-        $(el).css('display', 'none');
-      }
+        const html = await res.text();
+        const $ = cheerio.load(html);
 
-      // 3. Nettoyage absolu pour éviter les conflits de chargement
-      $(el).removeAttr('srcset sizes loading width height data-src data-lazy-src data-srcset data-orig-file');
-    });
+        const title = $('meta[property="og:title"]').attr('content') || $('h1').text().trim() || slug.replace(/-/g, ' ');
+        let image = $('meta[property="og:image"]').attr('content') || "";
+        // On nettoie aussi l'image d'accueil pour qu'elle soit nette
+        if (image) image = image.replace(/-\d+x\d+(?=\.[a-zA-Z]+$)/, '');
+        
+        const excerpt = $('article p, main p, .blog-post p').first().text().substring(0, 180) + "...";
 
-      // Nettoyage : On supprime les attributs qui bloquent l'affichage ou forcent une petite taille
-      $(el).removeAttr('srcset sizes loading width height data-src data-lazy-src data-srcset data-orig-file');
-    });
+        cardsHtml += `
+          <article class="card">
+            <div class="card-image" style="background-image:url('${image}'); background-size:cover; background-position:center"></div>
+            <div class="card-content">
+              <h3>${title}</h3>
+              <p>${excerpt}</p>
+              <a class="button" href="./articles/${slug}.html">Réservez un séjour</a>
+            </div>
+          </article>
+        `;
 
-    // Correction des liens
-    contentNode.find('a').each((i, el) => {
-      let href = $(el).attr('href');
-      if (href && !href.startsWith('#') && !href.startsWith('http')) {
-        $(el).attr('href', href.startsWith('/') ? `https://www.flatshaker.fr${href}` : `https://www.flatshaker.fr/${href}`);
-      }
-      $(el).attr('target', '_blank').attr('rel', 'noopener noreferrer');
-    });
+        let contentNode = $('article, main, .blog-post').first();
+        if (!contentNode.length) contentNode = $('body');
 
-    // Rendre les titres d'événements cliquables
-    contentNode.find('h2, h3').each((i, el) => {
-      if (!$(el).find('a').length) {
-        let next = $(el).next();
-        let found = null;
-        while (next.length && !next.is('h2, h3')) {
-          const imgLink = next.find('a img').parent('a').attr('href');
-          if (imgLink) { found = imgLink; break; }
-          next = next.next();
-        }
-        if (found) {
-          const text = $(el).text().trim();
-          $(el).html(`<a href="${found}" target="_blank">${text}</a>`);
-        }
-      }
-    });
+        contentNode.find('script, style, nav, header, footer, form, button, aside').remove();
+        contentNode.find('a[href*="/blog/auteurs/"], a[href*="/blog/categories/"], a[href*="/blog/mots-cles/"]').each((i, el) => {
+          const parent = $(el).closest('p, div, li, span');
+          if (parent.length) parent.remove();
+          else $(el).remove();
+        });
 
-    // Génération de la page HTML statique de l'article
-    const articleHtml = `<!DOCTYPE html>
+        // Correction des images : Version Finale (Nette + Anti-disparition)
+        contentNode.find('img').each((i, el) => {
+          let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src');
+          if (src && !src.startsWith('data:')) {
+            src = src.replace(/-\d+x\d+(?=\.[a-zA-Z]+$)/, '');
+            src = src.trim();
+            if (src.startsWith('//')) src = 'https:' + src;
+            else if (!src.startsWith('http')) src = src.startsWith('/') ? `https://www.flatshaker.fr${src}` : `https://www.flatshaker.fr/${src}`;
+            $(el).attr('src', src);
+            $(el).css('display', '');
+          } else if (src && src.startsWith('data:')) {
+            $(el).css('display', 'none');
+          }
+          $(el).removeAttr('srcset sizes loading width height data-src data-lazy-src data-srcset data-orig-file');
+        });
+
+        contentNode.find('a').each((i, el) => {
+          let href = $(el).attr('href');
+          if (href && !href.startsWith('#') && !href.startsWith('http')) {
+            $(el).attr('href', href.startsWith('/') ? `https://www.flatshaker.fr${href}` : `https://www.flatshaker.fr/${href}`);
+          }
+          $(el).attr('target', '_blank').attr('rel', 'noopener noreferrer');
+        });
+
+        contentNode.find('h2, h3').each((i, el) => {
+          if (!$(el).find('a').length) {
+            let next = $(el).next();
+            let found = null;
+            while (next.length && !next.is('h2, h3')) {
+              const imgLink = next.find('a img').parent('a').attr('href');
+              if (imgLink) { found = imgLink; break; }
+              next = next.next();
+            }
+            if (found) {
+              const text = $(el).text().trim();
+              $(el).html(`<a href="${found}" target="_blank">${text}</a>`);
+            }
+          }
+        });
+
+        const articleHtml = `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
@@ -141,8 +131,8 @@ async function build() {
   <div class="topbar">
     <div class="topbar-inner">
       <a href="../" class="topbar-back">← Retour aux Actus 88</a>
-<a href="https://www.flatshaker.fr/hotemoselottebnb" target="_blank" rel="noopener noreferrer" class="cta-location">Réservez un séjour</a>
-</div>
+      <a href="https://www.flatshaker.fr/hotemoselottebnb" target="_blank" rel="noopener noreferrer" class="cta-location">Réservez un séjour</a>
+    </div>
   </div>
   <main class="container">
     <a class="back" href="../">← Revenir à la liste des articles</a>
@@ -155,15 +145,20 @@ async function build() {
 </body>
 </html>`;
 
-    fs.writeFileSync(`./articles/${slug}.html`, articleHtml);
+        fs.writeFileSync(`./articles/${slug}.html`, articleHtml);
+      } catch (err) {
+        console.log(`Erreur ignorée sur l'article ${url} : ${err.message}`);
+      }
+    }
+
+    let template = fs.readFileSync('template.html', 'utf8');
+    template = template.replace('', cardsHtml);
+    fs.writeFileSync('index.html', template);
+
+    console.log("Génération terminée avec succès !");
+  } catch (globalErr) {
+    console.error("Le script a rencontré un problème majeur :", globalErr);
   }
-
-  // Création du fichier index.html final
-  let template = fs.readFileSync('template.html', 'utf8');
-  template = template.replace('', cardsHtml);
-  fs.writeFileSync('index.html', template);
-
-  console.log("Génération réussie !");
 }
 
 build();
