@@ -17,7 +17,6 @@ async function build() {
 
     // Ton dernier article forcé (le court-circuit)
     urls.unshift("https://www.flatshaker.fr/actus-88-du-23-au-29-mai-2026");
-    // On nettoie les doublons au cas où le sitemap se mettrait à jour
     urls = [...new Set(urls)];
 
     let cardsHtml = "";
@@ -28,10 +27,8 @@ async function build() {
         console.log(`Traitement de : ${url}`);
         const slug = url.split('/').filter(Boolean).pop();
 
-        // NOUVEAU : On imite mieux un humain avec 1.5 seconde de pause
         await delay(1500);
 
-        // NOUVEAU : On coupe au bout de 10 secondes si Monsite-en-ligne bloque
         const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (!res.ok) throw new Error(`Erreur serveur : ${res.status}`);
         
@@ -144,6 +141,14 @@ async function build() {
   <title>${title} – Actus 88</title>
   <meta name="robots" content="index,follow">
   
+  <script>
+    // Si la page est ouverte seule (depuis Facebook) et pas dans l'Iframe Ionos
+    if (window.self === window.top) {
+      // On téléporte le visiteur vers le site principal
+      window.location.replace("https://www.hotemoselottebnb.fr/voyageurs#blog");
+    }
+  </script>
+
   <meta property="og:title" content="${title.replace(/"/g, '&quot;')}">
   <meta property="og:description" content="${excerpt.replace(/"/g, '&quot;')}">
   <meta property="og:image" content="${image}">
