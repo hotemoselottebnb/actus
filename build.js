@@ -10,13 +10,15 @@ async function build() {
     const sitemapRes = await fetch("https://www.flatshaker.fr/sitemap.xml");
     const sitemapXml = await sitemapRes.text();
 
-    const urls = [...sitemapXml.matchAll(/<loc>(.*?)<\/loc>/g)]
+    let urls = [...sitemapXml.matchAll(/<loc>(.*?)<\/loc>/g)]
       .map(m => m[1])
       .filter(url => url.includes("actus-88"))
       .reverse();
 
-    // On force le robot à ajouter ton dernier article tout en haut de la liste
+    // Ton dernier article forcé (le court-circuit)
     urls.unshift("https://www.flatshaker.fr/actus-88-du-23-au-29-mai-2026");
+    // On nettoie les doublons au cas où le sitemap se mettrait à jour
+    urls = [...new Set(urls)];
 
     let cardsHtml = "";
     if (!fs.existsSync('./articles')) fs.mkdirSync('./articles');
@@ -26,17 +28,18 @@ async function build() {
         console.log(`Traitement de : ${url}`);
         const slug = url.split('/').filter(Boolean).pop();
 
-        await delay(500);
+        // NOUVEAU : On imite mieux un humain avec 1.5 seconde de pause
+        await delay(1500);
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Impossible de charger la page (Erreur ${res.status})`);
+        // NOUVEAU : On coupe au bout de 10 secondes si Monsite-en-ligne bloque
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) throw new Error(`Erreur serveur : ${res.status}`);
         
         const html = await res.text();
         const $ = cheerio.load(html);
 
         const title = $('meta[property="og:title"]').attr('content') || $('h1').text().trim() || slug.replace(/-/g, ' ');
         
-        // --- Image d'accueil ---
         let image = $('meta[property="og:image"]').attr('content') || "";
         if (image) {
           image = image.split('?')[0]; 
@@ -45,7 +48,6 @@ async function build() {
         
         const excerpt = $('article p, main p, .blog-post p').first().text().substring(0, 180) + "...";
 
-        // BOUTON "LIRE L'ARTICLE"
         cardsHtml += `
           <article class="card">
             <div class="card-image" style="background-image:url('${image}'); background-size:cover; background-position:center"></div>
@@ -69,7 +71,6 @@ async function build() {
 
         contentNode.find('figure, div, span, a').removeAttr('style');
 
-        // --- IMAGES ARTICLE ---
         contentNode.find('img').each((i, el) => {
           let src = $(el).attr('data-src') || $(el).attr('data-lazy-src') || $(el).attr('src') || '';
           
@@ -83,10 +84,7 @@ async function build() {
                 let wMatch = chunks[1].match(/(\d+)w/);
                 if (wMatch) {
                   let w = parseInt(wMatch[1], 10);
-                  if (w > maxW) {
-                    maxW = w;
-                    bestUrl = chunks[0];
-                  }
+                  if (w > maxW) { maxW = w; bestUrl = chunks[0]; }
                 }
               } else if (chunks.length === 1 && maxW === 0) {
                 bestUrl = chunks[0];
@@ -138,7 +136,6 @@ async function build() {
           }
         });
 
-        // --- LE HTML COMPLET (Avec les balises Facebook) ---
         const articleHtml = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -193,7 +190,7 @@ async function build() {
 
         fs.writeFileSync(`./articles/${slug}.html`, articleHtml);
       } catch (err) {
-        console.log(`Erreur ignorée sur l'article ${url} : ${err.message}`);
+        console.log(`Erreur sur l'article ${url} : ${err.message}`);
       }
     }
 
@@ -203,7 +200,7 @@ async function build() {
 
     console.log("Génération terminée avec succès !");
   } catch (globalErr) {
-    console.error("Le script a rencontré un problème majeur :", globalErr);
+    console.error("Problème majeur :", globalErr);
   }
 }
 
