@@ -24,9 +24,35 @@ async function build() {
 
     for (const url of urls) {
       try {
-        console.log(`Traitement de : ${url}`);
         const slug = url.split('/').filter(Boolean).pop();
 
+        // --- NOUVEAU : LE CERVEAU DU ROBOT (MÉMOIRE LOCALE) ---
+        // Si l'article est déjà stocké, on le lit sans passer par internet !
+        const localPath = `./articles/${slug}.html`;
+        if (fs.existsSync(localPath)) {
+          console.log(`Lu en mémoire ultra-rapide : ${slug}`);
+          const localHtml = fs.readFileSync(localPath, 'utf8');
+          const $local = cheerio.load(localHtml);
+          
+          const localTitle = $local('title').text().replace(' – Actus 88', '');
+          const localImage = $local('.hero-image').attr('src') || "";
+          const localExcerpt = $local('.content p').first().text().substring(0, 180) + "...";
+
+          cardsHtml += `
+            <article class="card">
+              <div class="card-image" style="background-image:url('${localImage}'); background-size:cover; background-position:center"></div>
+              <div class="card-content">
+                <h3>${localTitle}</h3>
+                <p>${localExcerpt}</p>
+                <a class="button" href="./articles/${slug}.html">Lire l’article</a>
+              </div>
+            </article>
+          `;
+          continue; // On passe instantanément à l'article suivant, zéro risque de blocage !
+        }
+
+        // --- TÉLÉCHARGEMENT DES NOUVEAUTÉS UNIQUEMENT ---
+        console.log(`Téléchargement de la nouveauté : ${url}`);
         await delay(1500);
 
         const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
@@ -142,9 +168,7 @@ async function build() {
   <meta name="robots" content="index,follow">
   
   <script>
-    // Si la page est ouverte seule (depuis Facebook) et pas dans l'Iframe Ionos
     if (window.self === window.top) {
-      // On téléporte le visiteur vers le site principal
       window.location.replace("https://www.hotemoselottebnb.fr/voyageurs#blog");
     }
   </script>
