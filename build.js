@@ -15,6 +15,9 @@ async function build() {
       .filter(url => url.includes("actus-88"))
       .reverse();
 
+    // On force le robot à ajouter ton dernier article tout en haut de la liste
+    urls.unshift("https://www.flatshaker.fr/actus-88-du-23-au-29-mai-2026");
+
     let cardsHtml = "";
     if (!fs.existsSync('./articles')) fs.mkdirSync('./articles');
 
