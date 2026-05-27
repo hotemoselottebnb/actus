@@ -202,7 +202,7 @@ async function build() {
   <div class="topbar">
     <div class="topbar-inner">
       <a href="../" class="topbar-back">← Retour aux Actus 88</a>
-      <a href="https://www.flatshaker.fr/hotemoselottebnb" target="_blank" rel="noopener noreferrer" class="cta-location">Réservez un séjour</a>
+      <a href="https://www.hotemoselottebnb.fr/voyageurs/#locations" target="_blank" rel="noopener noreferrer" class="cta-location">Réservez un séjour</a>
     </div>
   </div>
   <main class="container">
