@@ -29,7 +29,7 @@ async function build() {
         // --- NOUVEAU : LE CERVEAU DU ROBOT (MÉMOIRE LOCALE) ---
         // Si l'article est déjà stocké, on le lit sans passer par internet !
         const localPath = `./articles/${slug}.html`;
-        if (fs.existsSync(localPath)) {
+        if (false && fs.existsSync(localPath)) {
           console.log(`Lu en mémoire ultra-rapide : ${slug}`);
           const localHtml = fs.readFileSync(localPath, 'utf8');
           const $local = cheerio.load(localHtml);
