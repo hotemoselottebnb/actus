@@ -16,7 +16,7 @@ async function build() {
       .reverse();
 
     // Ton dernier article forcé (le court-circuit)
-    urls.unshift("https://www.flatshaker.fr/actus-88-du-23-au-29-mai-2026");
+    urls.unshift("https://www.flatshaker.fr/actus-88-du-30-mai-au-05-juin-20268-au-14-novembr");
     urls = [...new Set(urls)];
 
     let cardsHtml = "";
